@@ -1,4 +1,4 @@
-# Basic guide to Installing and Updating on Mac OS 10.12+ and OS X
+# Basic guide to Installing and Updating on macOS and OSX
 Press Command+Space and type Terminal and press enter/return key.
 Run all the following in the Terminal app:
 
@@ -18,9 +18,9 @@ Tested on macOS Big Sur (OSX 11)
 ```
 
 
-# Step 2 Install dependencies : gtar (gnu-tar) sed (gnu-sed)
+# Step 2 Install dependencies : sed (gnu-sed)
 ```
-brew install gnu-tar gnu-tar
+brew install gnu-sed
 ```
 
 # Step 3 Install clamav
@@ -44,7 +44,7 @@ sudo dscl . create /Users/clamav PrimaryGroupID 799
 sudo mkdir -p /usr/local/var/clamav/run
 sudo mkdir -p /usr/local/var/clamav/log
 sudo mkdir -p /usr/local/var/clamav/db
-sudo mkdir -p  "/Library/LaunchDaemons"
+sudo mkdir -p "/Library/LaunchDaemons"
 
 # Generate the configs
 cp "/usr/local/etc/clamav/clamd.conf.sample" "/usr/local/etc/clamav/clamd.conf"
@@ -55,6 +55,7 @@ sed -e "s|# Example config file|# Config file|" \
        -e "s|^#PidFile .*|PidFile /usr/local/var/clamav/run/clamd.pid|" \
        -e "s|^#DatabaseDirectory .*|DatabaseDirectory /usr/local/var/clamav/db|" \
        -e "s|^#LocalSocket .*|LocalSocket /usr/local/var/clamav/run/clamd.socket|" \
+       -e "s|^#FixStaleSocket|FixStaleSocket|" \"
        -i -n "/usr/local/etc/clamav/clamd.conf"
 
 cp "/usr/local/etc/clamav/freshclam.conf.sample" "/usr/local/etc/clamav/freshclam.conf"
@@ -68,6 +69,10 @@ sed -e "s|# Example config file|# Config file|" \
 
 # Fix permissions
 sudo chown -R clamav:clamav /usr/local/var/clamav
+
+# Clamd socket
+sudo touch /usr/local/var/clamav/run/clamd.socket
+sudo chown clamav:clamav /usr/local/var/clamav/run/clamd.socket
 
 sudo tee "/Library/LaunchDaemons/clamav.clamd.plist" << EOF > /dev/null
 <?xml version="1.0" encoding="UTF-8"?>
@@ -158,9 +163,8 @@ curl https://raw.githubusercontent.com/extremeshok/clamav-unofficial-sigs/master
 chmod 755  /usr/local/bin/clamav-unofficial-sigs.sh
 mkdir -p /usr/local/etc/clamav-unofficial-sigs
 curl https://raw.githubusercontent.com/extremeshok/clamav-unofficial-sigs/master/config/master.conf --output /usr/local/etc/clamav-unofficial-sigs/master.conf
-curl https://raw.githubusercontent.com/extremeshok/clamav-unofficial-sigs/master/config/os/os.macosx.conf --output /usr/local/etc/clamav-unofficial-sigs/os.conf
+curl https://raw.githubusercontent.com/extremeshok/clamav-unofficial-sigs/master/config/os/os.macos.conf --output /usr/local/etc/clamav-unofficial-sigs/os.conf
 curl https://raw.githubusercontent.com/extremeshok/clamav-unofficial-sigs/master/config/user.conf --output /usr/local/etc/clamav-unofficial-sigs/user.conf
-exit
 ```
 
 # Step 6

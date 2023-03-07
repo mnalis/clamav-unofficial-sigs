@@ -409,7 +409,7 @@ function xshok_database() { # rating database_array
             continue # Skip to the next value
           fi
         fi
-        if [ -z "$current_rating" ] ; then # YARA rules are disabled
+        if [ -z "$current_rating" ] ; then
           new_dbs+=( "$db_name" )
         else
             if [[ ! "$db_name" = *"|"* ]] ; then # This old format
@@ -534,7 +534,7 @@ clamav-unofficial-sigs \\- Download, test, and install third-party ClamAV signat
 .B clamav-unofficial-sigs
 .RI [ options ]
 .SH DESCRIPTION
-\\fBclamav-unofficial-sigs\\fP provides a simple way to download, test, and update third-party signature databases provided by Sanesecurity, FOXHOLE, OITC, Scamnailer, BOFHLAND, CRDF, Porcupine, Securiteinfo, MalwarePatrol, Yara-Rules Project, etc. It will also generate and install cron, logrotate, and man files.
+\\fBclamav-unofficial-sigs\\fP provides a simple way to download, test, and update third-party signature databases provided by Sanesecurity, FOXHOLE, OITC, BOFHLAND, CRDF, Porcupine, Securiteinfo, MalwarePatrol, Yara-Rules Project, etc. It will also generate and install cron, logrotate, and man files.
 .SH UPDATES
 Script updates can be found at: \\fBhttps://github.com/extremeshok/clamav-unofficial-sigs\\fP
 .SH OPTIONS
@@ -757,7 +757,11 @@ function xshok_upgrade() {
                     exit 1
                 fi
                 # Copy over permissions from old version
-              OCTAL_MODE="$(stat -c "%a" "${config_dir}/master.conf")"
+                OCTAL_MODE="$(stat -c "%a" "${config_dir}/master.conf" 2> /dev/null)"
+                if [ -z "$OCTAL_MODE" ]; then
+                  OCTAL_MODE="$(stat -f '%p' "${config_dir}/master.conf")"
+                fi
+
                 xshok_pretty_echo_and_log "Running update process"
                 if ! mv -f "${work_dir}/master.conf.tmp" "${config_dir}/master.conf" ; then
                     xshok_pretty_echo_and_log "ERROR: failed moving ${work_dir}/master.conf.tmp to ${config_dir}/master.conf"
@@ -794,8 +798,10 @@ function xshok_upgrade() {
                     exit 1
                 fi
                 # Copy over permissions from old version
-              OCTAL_MODE="$(stat -c "%a" "${this_script_full_path}")"
-
+                OCTAL_MODE="$(stat -c "%a" "${this_script_full_path}" 2> /dev/null)"
+                if [ -z "$OCTAL_MODE" ]; then
+                    OCTAL_MODE="$(stat -f '%p' "${this_script_full_path}")"
+                fi
                 xshok_pretty_echo_and_log "Inserting update process..."
               # Generate the update script
               cat > "${work_dir}/xshok_update_script.sh" << EOF
@@ -916,7 +922,7 @@ function gpg_verify_specific_sanesecurity_database_file() { # databasefile
       else
         xshok_pretty_echo_and_log "File ${db_file} cannot be found or is not a Sanesecurity database file."
         xshok_pretty_echo_and_log "Only the following Sanesecurity and OITC databases can be GPG signature tested:"
-        ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" "${work_dir_sanesecurity}"
+        ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "${work_dir_sanesecurity}"
       fi
     else
       xshok_pretty_echo_and_log "ERROR: Missing value for option"
@@ -1163,25 +1169,28 @@ function clamscan_integrity_test_specific_database_file() { # databasefile
       xshok_pretty_echo_and_log "Here is a list of third-party databases that can be clamscan integrity tested:"
 
       xshok_pretty_echo_and_log "=== Sanesecurity ==="
-      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" "$work_dir_sanesecurity"
+      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "$work_dir_sanesecurity"
 
       xshok_pretty_echo_and_log "=== SecuriteInfo ==="
-      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" "$work_dir_securiteinfo"
+      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "$work_dir_securiteinfo"
 
       xshok_pretty_echo_and_log "=== MalwarePatrol ==="
-      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" "$work_dir_malwarepatrol"
+      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "$work_dir_malwarepatrol"
 
       xshok_pretty_echo_and_log "=== Linux Malware Detect ==="
-      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" "$work_dir_linuxmalwaredetect"
+      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "$work_dir_linuxmalwaredetect"
+
+      xshok_pretty_echo_and_log "=== interServer Detect ==="
+      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "$work_dir_interserver"
 
       xshok_pretty_echo_and_log "=== Malware Expert Detect ==="
-      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" "$work_dir_malwareexpert"
+      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "$work_dir_malwareexpert"
 
       xshok_pretty_echo_and_log "=== Linux Malware Detect ==="
-      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" "$work_dir_yararulesproject"
+      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "$work_dir_yararulesproject"
 
       xshok_pretty_echo_and_log "=== User Defined Databases ==="
-      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" "$work_dir_add"
+      ls --ignore "*.sig" --ignore "*.md5" --ignore "*.ign2" --ignore "*.fp"  "$work_dir_add"
 
       xshok_pretty_echo_and_log "Check the file name and try again..."
     fi
@@ -1224,23 +1233,36 @@ function add_signature_whitelist_entry() { #signature
         input="$(echo "${input}" | tr -d "'" | tr -d '"' | tr -d '`"')"
         input=${input/\.UNOFFICIAL/}
 
-    sig_full="$($grep_bin -H -m 1 "$input" ./*.*db)"
-        sig_extension=${sig_full%%\:*}
-        sig_extension=${sig_extension##*\.}
+        yaratest="$(echo "$input" | cut -d "." -f 1)"
         shopt -s nocasematch
-        if [ "$sig_extension" == "hdb" ] || [ "$sig_extension" == "hsb" ] || [ "$sig_extension" == "hdu " ] || [ "$sig_extension" == "hsu" ] || [ "$sig_extension" == "mdb" ] || [ "$sig_extension" == "msb" ] || [ "$sig_extension" == "mdu" ] || [ "$sig_extension" == "msu" ] ; then
-            # Hash-based Signature Database
-            position="4"
+        if [ "$yaratest" == "YARA" ] ; then
+            echo "YARA signature detected"
+            sig_full="$input"
+            sig_extension=""
+            sig_name="$input"
         else
-            position="2"
+            sig_full="$($grep_bin -H -m 1 "$input" ./*.*db)"
+            sig_extension=${sig_full%%\:*}
+            sig_extension=${sig_extension##*\.}
+            shopt -s nocasematch
+            if [ "$sig_extension" == "hdb" ] || [ "$sig_extension" == "hsb" ] || [ "$sig_extension" == "hdu " ] || [ "$sig_extension" == "hsu" ] || [ "$sig_extension" == "mdb" ] || [ "$sig_extension" == "msb" ] || [ "$sig_extension" == "mdu" ] || [ "$sig_extension" == "msu" ] ; then
+                # Hash-based Signature Database
+                position="4"
+            else
+                position="2"
+            fi
+            sig_name="$(echo "$sig_full" | cut -d ":" -f $position | cut -d "=" -f 1)"
         fi
-    sig_name="$(echo "$sig_full" | cut -d ":" -f $position | cut -d "=" -f 1)"
 
     if [ -n "$sig_name" ] ; then
       if ! $grep_bin -m 1 "$sig_name" my-whitelist.ign2 > /dev/null 2>&1 ; then
         cp -f -p my-whitelist.ign2 "$work_dir_work_configs" 2>/dev/null
         echo "$sig_name" >> "${work_dir_work_configs}/my-whitelist.ign2"
-        echo "$sig_full" >> "${work_dir_work_configs}/tracker.txt"
+        shopt -s nocasematch
+        if [ "$yaratest" != "YARA" ] ; then
+            echo "$sig_full" >> "${work_dir_work_configs}/tracker.txt"
+        fi
+
         if $clamscan_bin --quiet -d "${work_dir_work_configs}/my-whitelist.ign2" "${work_dir_work_configs}/scan-test.txt" ; then
           if $rsync_bin -pcqt "${work_dir_work_configs}/my-whitelist.ign2" "$clam_dbs" ; then
             perms chown -f "${clam_user}:${clam_group}" my-whitelist.ign2
@@ -1254,13 +1276,14 @@ function add_signature_whitelist_entry() { #signature
             if [ "$selinux_fixes" == "yes" ] ; then
               restorecon "${clam_dbs}/local.ign"
             fi
-                        do_clamd_reload="4"
+            do_clamd_reload="4"
             clamscan_reload_dbs
 
-            xshok_pretty_echo_and_log "Signature '${input}' has been added to my-whitelist.ign2 and"
-            xshok_pretty_echo_and_log "all databases have been reloaded.  The script will track any changes"
-            xshok_pretty_echo_and_log "to the offending signature and will automatically remove it if the"
-            xshok_pretty_echo_and_log "signature is modified or removed from the third-party database."
+            xshok_pretty_echo_and_log "Signature '${input}' has been added to my-whitelist.ign2 and all databases have been reloaded."
+            if [ "$yaratest" != "YARA" ] ; then
+                xshok_pretty_echo_and_log "The script will track any changes to the offending signature and will automatically remove it, "
+                xshok_pretty_echo_and_log "if the signature is modified or removed from the third-party database."
+            fi
           else
 
             xshok_pretty_echo_and_log "Failed to successfully update my-whitelist.ign2 file - SKIPPING."
@@ -1527,9 +1550,9 @@ EOF
 ################################################################################
 
 # Script Info
-script_version="7.2"
-script_version_date="2020-12-02"
-minimum_required_config_version="93"
+script_version="7.2.5"
+script_version_date="2021-03-20"
+minimum_required_config_version="96"
 minimum_yara_clamav_version="0.100"
 
 # Discover script: name, full_path and path
@@ -1616,7 +1639,7 @@ else
     xshok_pretty_echo_and_log "WARNING: ${config_dir}/user.conf is not readable"
 fi
 
-# Solaris command -v function returns garbage when the program is not found
+# Solaris command -v function returns garbage when the program is not found k
 # only define the new command -v function if running under Solaris
 if [ "$(uname -s)" == "SunOS" ] ; then
   function which() {
@@ -1625,77 +1648,49 @@ if [ "$(uname -s)" == "SunOS" ] ; then
   }
 fi
 
-# Default Binaries & Commands
-uname_bin="$(command -v uname 2> /dev/null)"
-clamscan_bin="$(command -v clamscan 2> /dev/null)"
-rsync_bin="$(command -v rsync 2> /dev/null)"
-
-# Detect supprot for gnu grep
-if [ -x /usr/gnu/bin/grep ] ; then
-  grep_bin="/usr/gnu/bin/grep"
-else
-  grep_bin="$(command -v grep 2> /dev/null)"
-fi
-if [ -z "$grep_bin" ] ; then
-    xshok_pretty_echo_and_log "ERROR: grep command is missing"
-    exit 1
-  fi
-# Detect supprot for sed
-sed_bin="$(command -v sed 2> /dev/null)"
-if [ -z "$grep_bin" ] ; then
-  xshok_pretty_echo_and_log "ERROR: sed command is missing"
-  exit 1
-fi
-
-# Detect support for tar or gtar
-if [ "$(uname -s)" == "Darwin" ] || [ "$(uname -s)" == "OpenBSD" ] || [ "$(uname -s)" == "NetBSD" ] || [ "$(uname -s)" == "FreeBSD" ] ; then
-    tar_executable="gtar"
-else
-    tar_executable="tar"
-fi
-if [ -z "$tar_bin" ]; then
-        tar_bin="$(command -v "$tar_executable" 2> /dev/null)"
+# sed_bin, this is required to be known upfront, due to how the configs are read.
+if [ -z "$sed_bin" ] ; then
+    # Detect support for sed or gsed
+    if [ "$(uname -s)" == "Darwin" ] || [ "$(uname -s)" == "OpenBSD" ] || [ "$(uname -s)" == "NetBSD" ] || [ "$(uname -s)" == "FreeBSD" ] ; then
+        sed_bin="$(command -v gsed 2> /dev/null)"
+        if [ -z "$sed_bin" ]; then
+            xshok_pretty_echo_and_log "ERROR: gsed (gnu sed) is missing"
+            exit 1
+        fi
     else
-        xshok_pretty_echo_and_log "ERROR: gtar (gnu tar) is missing"
+        sed_bin="$(command -v sed 2> /dev/null)"
+        if [ -z "$sed_bin" ]; then
+            xshok_pretty_echo_and_log "ERROR: sed is missing"
+            exit 1
+        fi
+    fi
+elif [[ "$sed_bin" =~ "/" ]] ; then
+    if [ ! -x "$sed_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: sed (${sed_bin}) is not executable"
         exit 1
-fi
-# Detect support for curl
-if [ -z "$curl_bin" ]; then
-    curl_bin="$(command -v curl 2> /dev/null)"
-fi
-# Detect support for wget
-if [ -z "$wget_bin" ]; then
-    if [ -x /usr/sfw/bin/wget ] ; then
-      wget_bin="/usr/sfw/bin/wget"
-    else
-      wget_bin="$(command -v wget 2> /dev/null)"
+
     fi
 fi
-if [ -z "$wget_bin" ] && [ -z "$curl_bin" ]; then
-  curl_bin="$(command -v curl 2> /dev/null)"
-  if [ -z "$curl_bin" ] ; then
-    xshok_pretty_echo_and_log "ERROR: both wget and curl commands are missing, One of them is required"
-    exit 1
-  fi
+# grep_bin, this is required to be known upfront, due to how the configs are read.
+if [ -z "$grep_bin" ] ; then
+    # Detect support for grep or gnugrep
+    if [ -x /usr/gnu/bin/grep ]  ; then
+        grep_bin="/usr/gnu/bin/grep"
+    else
+        grep_bin="$(command -v grep 2> /dev/null)"
+        if [ -z "$grep_bin" ] ; then
+            xshok_pretty_echo_and_log "ERROR: grep binary (grep_bin) not found"
+            exit 1
+        fi
+    fi
+elif [[ "$grep_bin" =~ "/" ]] ; then
+    if [ ! -x "$grep_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: grep (${grep_bin}) is not executable"
+        exit 1
+
+    fi
 fi
 
-if [ -n "$wget_bin" ] ; then
-  # wget compression support
-  if $wget_bin --help | $grep_bin -q "compression=TYPE" ; then
-    wget_compression="--compression=auto"
-  else
-    wget_compression=""
-  fi
-fi
-# Detect support for dig or host
-dig_bin="$(command -v dig 2> /dev/null)"
-if [ -n "$dig_bin" ] ; then
-  host_bin="$(command -v host 2> /dev/null)"
-  if [ -z "$host_bin" ] ; then
-    xshok_pretty_echo_and_log "ERROR: both dig and host commands are missing, One of them is required"
-    exit 1
-  fi
-fi
 # Detect if terminal
 if [ -t 1 ] ; then
   # Set fonts
@@ -1713,7 +1708,6 @@ else
   # Silence
   force_verbose="no"
 fi
-
 
 # Generic command line options
 while true ; do
@@ -1798,7 +1792,7 @@ for config_file in "${config_files[@]}" ; do
       clean_config=${clean_config//\#*/} # Comment line (duplicated)
       # shellcheck disable=SC2001
       clean_config="$(echo "$clean_config" | $sed_bin -e '/^[[:blank:]]*#/d;s/#.*//')" # Comments at end of line
-      #clean_config="$(echo "$clean_config" | $sed_bin -e 's/^[ \t]*//;s/[ \t]*$//')" # trailing and leading whitespace
+      #clean_config="$(echo "$clean_config" | $sed_bin -e 's/^[[:blank:]]*//;s/[[:blank:]]*$//')" # trailing and leading whitespace
       clean_config="$(echo "$clean_config" | xargs)"
       # shellcheck disable=SC2001
       clean_config="$(echo "$clean_config" | $sed_bin -e '/^\s*$/d')" # Blank lines
@@ -1811,7 +1805,7 @@ for config_file in "${config_files[@]}" ; do
       clean_config="$(echo "$clean_config" | $sed_bin -e 's/#[[:space:]].*//')" # Comment line (duplicated)
       # shellcheck disable=SC2001
       clean_config="$(echo "$clean_config" | $sed_bin -e '/^[[:blank:]]*#/d;s/#.*//')" # Comments at end of line
-      #clean_config="$(echo "$clean_config" | $sed_bin -e 's/^[ \t]*//;s/[ \t]*$//')" # trailing and leading whitespace
+      #clean_config="$(echo "$clean_config" | $sed_bin -e 's/^[[:blank:]]*//;s/[[:blank:]]*$//')" # trailing and leading whitespace
       #clean_config="$(echo "$clean_config" | xargs)"
       # shellcheck disable=SC2001
       clean_config="$(echo "$clean_config" | $sed_bin -e '/^\s*$/d')" # Blank lines
@@ -1823,8 +1817,7 @@ for config_file in "${config_files[@]}" ; do
       # Delete both trailing and leading whitespace
       # Delete all trailing whitespace
       # Delete all empty lines
-      clean_config="$(command "$sed_bin" -e '/^#.*/d' -e 's/[[:space:]]#.*//' -e 's/#[[:space:]].*//' -e 's/^[ \t]*//;s/[ \t]*$//' -e '/^\s*$/d' "$config_file")"
-
+      clean_config="$(command "$sed_bin" -e '/^#.*/d' -e 's/[[:space:]]#.*//' -e 's/#[[:space:]].*//' -e 's/^[[:blank:]]*//;s/[[:blank:]]*$//' -e '/^[[:space:]]*$/d' "$config_file")"
     fi
 
     #fix eval of |
@@ -1839,7 +1832,7 @@ for config_file in "${config_files[@]}" ; do
     fi
 
     # Check there is an = for every set of "" optional whitespace \s* between = and "
-    config_check_vars="$(echo "$clean_config" | $grep_bin -c '=\s*\"' )"
+    config_check_vars="$(echo "$clean_config" | $grep_bin -c '=[[:space:]]*\"' )"
 
     if [ $(( ${#config_check} / 2 )) -ne "$config_check_vars" ] ; then
       xshok_pretty_echo_and_log "ERROR: Your configuration has errors, every = requires a pair of \"\""
@@ -1912,6 +1905,11 @@ if [ -z "$work_dir_linuxmalwaredetect" ] ; then
 else
   shopt -s extglob; work_dir_malwarepatrol="${work_dir_malwarepatrol%%+(/)}"
 fi
+if [ -z "$work_dir_interserver" ] ; then
+  work_dir_interserver="$(echo "${work_dir}/${interserver_dir}" | $sed_bin 's:/*$::')"
+else
+  shopt -s extglob; work_dir_interserver="${work_dir_interserver%%+(/)}"
+fi
 if [ -z "$work_dir_malwareexpert" ] ; then
   work_dir_malwareexpert="$(echo "${work_dir}/${malwareexpert_dir}" | $sed_bin 's:/*$::')"
 else
@@ -1922,7 +1920,7 @@ if [ -z "$work_dir_malwarepatrol" ] ; then
 else
   shopt -s extglob; work_dir_malwarepatrol="${work_dir_malwarepatrol%%+(/)}"
 fi
-if [ -z "$work_dir_urlhaust" ] ; then
+if [ -z "$work_dir_urlhaus" ] ; then
   work_dir_urlhaus="$(echo "${work_dir}/${urlhaus_dir}" | $sed_bin 's:/*$::')"
 else
   shopt -s extglob; work_dir_urlhaus="${work_dir_urlhaus%%+(/)}"
@@ -1982,58 +1980,163 @@ fi
 # dont assign , but remove trailing /
 shopt -s extglob; clam_dbs="${clam_dbs%%+(/)}"
 
-# Force wget over curl.
-if [ -n "$wget_bin" ] && [ "$force_wget" == "yes" ] ; then
-        xshok_pretty_echo_and_log "NOTICE: Forcing wget"
-      curl_bin=""
+#####################################################################################################
+# Assign and Check Binaries/Commands
+# clamscan_bin
+if [ -z "$clamscan_bin" ] && [ "${1}" != "--remove-script" ] ; then
+    clamscan_bin="$(command -v clamscan 2> /dev/null)"
+    if [ -z "$clamscan_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: clamscan binary (clamscan_bin) not found"
+        exit 1
+    fi
+elif [[ "$clamscan_bin" =~ "/" ]] && [ "${1}" != "--remove-script" ] ; then
+    if [ ! -x "$clamscan_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: clamscan_bin (${clamscan_bin})is not executable"
+        exit 1
+
+    fi
 fi
+# uname_bin
+if [ -z "$uname_bin" ] ; then
+    uname_bin="$(command -v uname 2> /dev/null)"
+    if [ -z "$uname_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: uname binary (uname_bin) not found"
+        exit 1
+    fi
+elif [[ "$uname_bin" =~ "/" ]] ; then
+    if [ ! -x "$uname_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: uname_bin (${uname_bin}) is not executable"
+        exit 1
+
+    fi
+fi
+# rsync_bin
+if [ -z "$rsync_bin" ] ; then
+    rsync_bin="$(command -v rsync 2> /dev/null)"
+    if [ -z "$rsync_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: rsync binary (rsync_bin) not found"
+        exit 1
+    fi
+elif [[ "$rsync_bin" =~ "/" ]] ; then
+    if [ ! -x "$rsync_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: rsync_bin (${rsync_bin}) is not executable"
+        exit 1
+
+    fi
+fi
+# tar_bin
+if [ -z "$tar_bin" ] ; then
+    tar_bin="$(command -v tar 2> /dev/null)"
+    if [ -z "$tar_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: tar binary (tar_bin) not found"
+        exit 1
+    fi
+elif [[ "$tar_bin" =~ "/" ]] ; then
+    if [ ! -x "$tar_bin" ] ; then
+        xshok_pretty_echo_and_log "ERROR: tar_bin (${tar_bin}) is not executable"
+        exit 1
+    fi
+fi
+
+# gpg_bin
+if [ "$enable_gpg" == "yes" ] ; then
+    if [ -z "$gpg_bin" ] ; then
+        if [ -x "/opt/csw/bin/gpg" ] ; then
+            gpg_bin="/opt/csw/bin/gpg"
+        else
+            gpg_bin="$(command -v gpg 2> /dev/null)"
+            if [ -z "$gpg_bin" ] ; then
+                enable_gpg="no"
+            fi
+        fi
+    elif [[ "$gpg_bin" =~ "/" ]] ; then
+        if [ ! -x "$gpg_bin" ] ; then
+            enable_gpg="no"
+        fi
+    fi
+fi
+# curl_bin
+if [ -z "$curl_bin" ] ; then
+    curl_bin="$(command -v curl 2> /dev/null)"
+elif [[ "$curl_bin" =~ "/" ]] ; then
+    if [ ! -x "$curl_bin" ] ; then
+        curl_bin=""
+    fi
+fi
+# wget_bin
+if [ -z "$curl_bin" ] || [ "$force_wget" == "yes" ] ; then
+    if [ -z "$wget_bin" ] ; then
+        if [ -x /usr/sfw/bin/wget ] ; then
+            wget_bin="/usr/sfw/bin/wget"
+        else
+            wget_bin="$(command -v wget 2> /dev/null)"
+            if [ -z "$wget_bin" ] ; then
+                xshok_pretty_echo_and_log "ERROR: both wget (wget_bin) and curl (curl_bin) commands are missing, One of them is required"
+                exit 1
+            fi
+        fi
+    elif [[ "$wget_bin" =~ "/" ]] ; then
+        if [ ! -x "$wget_bin" ] ; then
+            xshok_pretty_echo_and_log "ERROR: wget_bin (${wget_bin}) is not executable"
+            exit 1
+
+        fi
+    fi
+    if [ -n "$wget_bin" ] ; then
+        # wget compression support
+        if $wget_bin --help 2> /dev/null | $grep_bin -q "compression=TYPE" 2> /dev/null ; then
+            wget_compression="--compression=auto"
+        else
+            wget_compression=""
+        fi
+    fi
+else
+    wget_bin=""
+    wget_compression=""
+    force_wget="no"
+fi
+
+
+# dig_bin
+if [ -z "$dig_bin" ] ; then
+    dig_bin="$(command -v dig 2> /dev/null)"
+elif [[ "$dig_bin" =~ "/" ]] ; then
+    if [ ! -x "$dig_bin" ] ; then
+        dig_bin=""
+    fi
+fi
+# host_bin
+if [ -z "$dig_bin" ] || [ "$force_host" == "yes" ] ; then
+    if [ -z "$host_bin" ] ; then
+        host_bin="$(command -v host 2> /dev/null)"
+        if [ -z "$host_bin" ] ; then
+            xshok_pretty_echo_and_log "ERROR: both host (host_bin) and dig (dig_bin) commands are missing, One of them is required"
+            exit 1
+        fi
+    elif [[ "$host_bin" =~ "/" ]] ; then
+        if [ ! -x "$host_bin" ] ; then
+            xshok_pretty_echo_and_log "ERROR: host_bin (${host_bin}) is not executable"
+            exit 1
+
+        fi
+    fi
+else
+    host_bin=""
+    force_host="no"
+fi
+
+
+
+#####################################################################################################
+
 
 # SANITY checks
 # Check default Binaries & Commands are defined
 if [ "$reload_dbs" == "yes" ] ; then
-  if [ -z "$clamd_reload_opt" ] ; then
-    xshok_pretty_echo_and_log "ERROR: Missing clamd_reload_opt"
-    exit 1
-  fi
-fi
-if [ -z "$uname_bin" ] ; then
-  xshok_pretty_echo_and_log "ERROR: uname (uname_bin) not found"
-  exit 1
-fi
-if [ -z "$clamscan_bin" ] ; then
-    if [ "${1}" != "--remove-script" ] ; then
-      xshok_pretty_echo_and_log "ERROR: clamscan binary (clamscan_bin) not found"
+    if [ -z "$clamd_reload_opt" ] ; then
+        xshok_pretty_echo_and_log "ERROR: Missing clamd_reload_opt"
+        exit 1
     fi
-  exit 1
-fi
-if [ -z "$rsync_bin" ] ; then
-  xshok_pretty_echo_and_log "ERROR: rsync binary (rsync_bin) not found"
-  exit 1
-fi
-if [ -z "$curl_bin" ] ; then
-  if [ -z "$wget_bin" ] ; then
-    xshok_pretty_echo_and_log "ERROR: wget and curl binaries not found, script requires either wget or curl"
-    exit 1
-  fi
-fi
-# Check if GPG is enabled and the binary is found
-if [ "$enable_gpg" == "yes" ] ; then
-  if [ -z "$gpg_bin" ] ; then
-    if [ -x /opt/csw/bin/gpg ] ; then
-      gpg_bin="/opt/csw/bin/gpg"
-    else
-      gpg_bin="$(command -v gpg 2> /dev/null)"
-    fi
-    if [ -z "$gpg_bin" ] ; then
-      gpg_bin="$(command -v gpg2 2> /dev/null)"
-    fi
-  fi
-  if [ -z "$gpg_bin" ] ; then
-    enable_gpg="no"
-  fi
-  if [ ! -x "$gpg_bin" ] ; then
-    enable_gpg="no"
-  fi
 fi
 if [ "$enable_gpg" != "yes" ] ; then
   xshok_pretty_echo_and_log "NOTICE: GnuPG / signature verification disabled"
@@ -2066,9 +2169,11 @@ if [ "$force_updates" == "yes" ] ; then
   securiteinfo_update_hours="0"
   securiteinfo_premium_update_hours="0"
   linuxmalwaredetect_update_hours="0"
+  interserver_update_hours="0"
   malwareexpert_update_hours="0"
   malwarepatrol_update_hours="0"
   yararulesproject_update_hours="0"
+  urlhaus_update_hours="0"
   additional_update_hours="0"
 fi
 
@@ -2085,9 +2190,9 @@ if [ "$enable_locking" == "yes" ] ; then
     else
       xshok_create_pid_file "$pid_file_fullpath"
     fi
-  else
-    xshok_create_pid_file "$pid_file_fullpath"
-  fi
+    else
+        xshok_create_pid_file "$pid_file_fullpath"
+    fi
   # Run this wehen the script exits
   trap -- "rm -f $pid_file_fullpath" EXIT
 fi
@@ -2212,6 +2317,9 @@ if [ "$default_dbs_rating" == "DISABLE" ] ; then
     if [ "$linuxmalwaredetect_dbs_rating" != "LOW" ] && [ "$linuxmalwaredetect_dbs_rating" != "MEDIUM" ] && [ "$linuxmalwaredetect_dbs_rating" != "HIGH" ]; then
         linuxmalwaredetect_enabled="no"
     fi
+    if [ "$interserver_dbs_rating" != "LOW" ] && [ "$interserver_dbs_rating" != "MEDIUM" ] && [ "$interserver_dbs_rating" != "HIGH" ]; then
+        interserver_enabled="no"
+    fi
     if [ "$malwareexpert_dbs_rating" != "LOW" ] && [ "$malwareexpert_dbs_rating" != "MEDIUM" ] && [ "$malwareexpert_dbs_rating" != "HIGH" ]; then
         malwareexpert_enabled="no"
     fi
@@ -2230,6 +2338,9 @@ else
     fi
     if [ "$linuxmalwaredetect_dbs_rating" == "DISABLE" ] ; then
         linuxmalwaredetect_enabled="no"
+    fi
+    if [ "$interserver_dbs_rating" == "DISABLE" ] ; then
+        interserver_enabled="no"
     fi
     if [ "$malwareexpert_dbs_rating" == "DISABLE" ] ; then
         malwareexpert_enabled="no"
@@ -2260,70 +2371,82 @@ else
   enable_yararules="no"
 fi
 
+############################################################################################
 # Generate the signature databases
+############################################################################################
 if [ "$sanesecurity_enabled" == "yes" ] ; then
   if [ -n "$sanesecurity_dbs" ] ; then
     if [ -n "$sanesecurity_dbs_rating" ] ; then
       temp_db="$(xshok_database "$sanesecurity_dbs_rating" "${sanesecurity_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$sanesecurity_dbs_rating" "${sanesecurity_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$sanesecurity_dbs_rating" "${sanesecurity_dbs[@]}")"
+      fi
     else
       temp_db="$(xshok_database "$default_dbs_rating" "${sanesecurity_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${sanesecurity_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${sanesecurity_dbs[@]}")"
+      fi
     fi
     sanesecurity_dbs=( )
     if [ -n "$temp_db" ] ; then
         read -r -a sanesecurity_dbs <<< "$temp_db"
     fi
   fi
-else
+elif [ "$remove_disabled_databases" == "yes" ] ; then
     temp_remove_db="$(xshok_remove_database "DISABLED" "${sanesecurity_dbs[@]}")"
 fi
 
 sanesecurity_remove_dbs=( )
-if [ -n "$temp_remove_db" ] ; then
+if [ -n "$temp_remove_db" ] && [ "$remove_disabled_databases" == "yes" ] ; then
     read -r -a sanesecurity_remove_dbs <<< "$temp_remove_db"
 fi
-
 ############################################################################################
 if [ "$securiteinfo_enabled" == "yes" ] ; then
   if [ -n "$securiteinfo_dbs" ] ; then
     if [ -n "$securiteinfo_dbs_rating" ] ; then
       temp_db="$(xshok_database "$securiteinfo_dbs_rating" "${securiteinfo_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$securiteinfo_dbs_rating" "${securiteinfo_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$securiteinfo_dbs_rating" "${securiteinfo_dbs[@]}")"
+      fi
     else
       temp_db="$(xshok_database "$default_dbs_rating" "${securiteinfo_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${securiteinfo_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${securiteinfo_dbs[@]}")"
+      fi
     fi
         securiteinfo_dbs=( )
         if [ -n "$temp_db" ] ; then
-            #securiteinfo_dbs=( $temp_db )
             read -r -a securiteinfo_dbs <<< "$temp_db"
         fi
   fi
-else
+elif [ "$remove_disabled_databases" == "yes" ] ; then
     temp_remove_db="$(xshok_remove_database "DISABLED" "${securiteinfo_dbs[@]}")"
 fi
 securiteinfo_remove_dbs=( )
-if [ -n "$temp_remove_db" ] ; then
+if [ -n "$temp_remove_db" ] && [ "$remove_disabled_databases" == "yes" ] ; then
     read -r -a securiteinfo_remove_dbs <<< "$temp_remove_db"
 fi
 if [ "$securiteinfo_enabled" == "yes" ] ; then
   if [ -n "$securiteinfo_premium_dbs" ] && [ "$securiteinfo_premium" == "yes" ] ; then
     if [ -n "$securiteinfo_dbs_rating" ] ; then
       temp_db="$(xshok_database "$securiteinfo_dbs_rating" "${securiteinfo_premium_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$securiteinfo_dbs_rating" "${securiteinfo_premium_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$securiteinfo_dbs_rating" "${securiteinfo_premium_dbs[@]}")"
+      fi
     else
       temp_db="$(xshok_database "$default_dbs_rating" "${securiteinfo_premium_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${securiteinfo_premium_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${securiteinfo_premium_dbs[@]}")"
+      fi
     fi
     if [ -n "$temp_db" ] ; then
         read -r -a securiteinfo_dbs <<< "$temp_db"
     fi
   fi
-else
+elif [ "$remove_disabled_databases" == "yes" ] ; then
     temp_remove_db="$(xshok_remove_database "DISABLED" "${securiteinfo_premium_dbs[@]}")"
 fi
-if [ -n "$temp_remove_db" ] ; then
+if [ -n "$temp_remove_db" ] && [ "$remove_disabled_databases" == "yes" ] ; then
     read -r -a securiteinfo_remove_dbs <<< "$temp_remove_db"
 fi
 ############################################################################################
@@ -2331,43 +2454,77 @@ if [ "$linuxmalwaredetect_enabled" == "yes" ] ; then
   if [ -n "$linuxmalwaredetect_dbs" ] ; then
     if [ -n "$linuxmalwaredetect_dbs_rating" ] ; then
       temp_db="$(xshok_database "$linuxmalwaredetect_dbs_rating" "${linuxmalwaredetect_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$linuxmalwaredetect_dbs_rating" "${linuxmalwaredetect_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$linuxmalwaredetect_dbs_rating" "${linuxmalwaredetect_dbs[@]}")"
+      fi
     else
       temp_db="$(xshok_database "$default_dbs_rating" "${linuxmalwaredetect_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${linuxmalwaredetect_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${linuxmalwaredetect_dbs[@]}")"
+      fi
     fi
         linuxmalwaredetect_dbs=( )
         if [ -n "$temp_db" ] ; then
             read -r -a linuxmalwaredetect_dbs <<< "$temp_db"
         fi
   fi
-else
+elif [ "$remove_disabled_databases" == "yes" ] ; then
   temp_remove_db="$(xshok_remove_database "DISABLED" "${linuxmalwaredetect_dbs[@]}")"
 fi
 linuxmalwaredetect_remove_dbs=( )
-if [ -n "$temp_remove_db" ] ; then
+if [ -n "$temp_remove_db" ] && [ "$remove_disabled_databases" == "yes" ] ; then
   read -r -a linuxmalwaredetect_remove_dbs <<< "$temp_remove_db"
+fi
+############################################################################################
+if [ "$interserver_enabled" == "yes" ] ; then
+  if [ -n "$interserver_dbs" ] ; then
+    if [ -n "$interserver_dbs_rating" ] ; then
+      temp_db="$(xshok_database "$interserver_dbs_rating" "${interserver_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$interserver_dbs_rating" "${interserver_dbs[@]}")"
+      fi
+    else
+      temp_db="$(xshok_database "$default_dbs_rating" "${interserver_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${interserver_dbs[@]}")"
+      fi
+    fi
+        interserver_dbs=( )
+        if [ -n "$temp_db" ] ; then
+            read -r -a interserver_dbs <<< "$temp_db"
+        fi
+  fi
+elif [ "$remove_disabled_databases" == "yes" ] ; then
+  temp_remove_db="$(xshok_remove_database "DISABLED" "${interserver_dbs[@]}")"
+fi
+interserver_remove_dbs=( )
+if [ -n "$temp_remove_db" ] && [ "$remove_disabled_databases" == "yes" ] ; then
+  read -r -a interserver_remove_dbs <<< "$temp_remove_db"
 fi
 ############################################################################################
 if [ "$malwareexpert_enabled" == "yes" ] ; then
   if [ -n "$malwareexpert_dbs" ] ; then
     if [ -n "$malwareexpert_dbs_rating" ] ; then
       temp_db="$(xshok_database "$malwareexpert_dbs_rating" "${malwareexpert_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$malwareexpert_dbs_rating" "${malwareexpert_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$malwareexpert_dbs_rating" "${malwareexpert_dbs[@]}")"
+      fi
     else
       temp_db="$(xshok_database "$default_dbs_rating" "${malwareexpert_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${malwareexpert_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${malwareexpert_dbs[@]}")"
+      fi
     fi
         malwareexpert_dbs=( )
         if [ -n "$temp_db" ] ; then
             read -r -a malwareexpert_dbs <<< "$temp_db"
         fi
   fi
-else
+elif [ "$remove_disabled_databases" == "yes" ] ; then
   temp_remove_db="$(xshok_remove_database "DISABLED" "${malwareexpert_dbs[@]}")"
 fi
 malwareexpert_remove_dbs=( )
-if [ -n "$temp_remove_db" ] ; then
+if [ -n "$temp_remove_db" ] && [ "$remove_disabled_databases" == "yes" ] ; then
   read -r -a malwareexpert_remove_dbs <<< "$temp_remove_db"
 fi
 ############################################################################################
@@ -2375,35 +2532,40 @@ if [ "$yararulesproject_enabled" == "yes" ] ; then
   if [ -n "$yararulesproject_dbs" ] ; then
     if [ -n "$yararulesproject_dbs_rating" ] ; then
       temp_db="$(xshok_database "$yararulesproject_dbs_rating" "${yararulesproject_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$yararulesproject_dbs_rating" "${yararulesproject_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$yararulesproject_dbs_rating" "${yararulesproject_dbs[@]}")"
+      fi
     else
       temp_db="$(xshok_database "$default_dbs_rating" "${yararulesproject_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${yararulesproject_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${yararulesproject_dbs[@]}")"
+      fi
     fi
     yararulesproject_dbs=( )
         if [ -n "$temp_db" ] ; then
             read -r -a yararulesproject_dbs <<< "$temp_db"
         fi
   fi
-else
+elif [ "$remove_disabled_databases" == "yes" ] ; then
   temp_remove_db="$(xshok_remove_database "DISABLED" "${yararulesproject_dbs[@]}")"
 fi
 yararulesproject_remove_dbs=( )
-if [ -n "$temp_remove_db" ] ; then
+if [ -n "$temp_remove_db" ] && [ "$remove_disabled_databases" == "yes" ] ; then
   read -r -a yararulesproject_remove_dbs <<< "$temp_remove_db"
 fi
-
-
-
 ############################################################################################
 if [ "$urlhaus_enabled" == "yes" ] ; then
   if [ -n "$urlhaus_dbs" ] ; then
     if [ -n "$urlhaus_dbs_rating" ] ; then
       temp_db="$(xshok_database "$urlhaus_dbs_rating" "${urlhaus_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$urlhaus_dbs_rating" "${urlhaus_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$urlhaus_dbs_rating" "${urlhaus_dbs[@]}")"
+      fi
     else
       temp_db="$(xshok_database "$default_dbs_rating" "${urlhaus_dbs[@]}")"
-      temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${urlhaus_dbs[@]}")"
+      if [ "$remove_disabled_databases" == "yes" ] ; then
+          temp_remove_db="$(xshok_remove_database "$default_dbs_rating" "${urlhaus_dbs[@]}")"
+      fi
     fi
     urlhaus_dbs=( )
         if [ -n "$temp_db" ] ; then
@@ -2411,22 +2573,22 @@ if [ "$urlhaus_enabled" == "yes" ] ; then
         read -r -a urlhaus_dbs <<< "$temp_db"
         fi
   fi
-else
+elif [ "$remove_disabled_databases" == "yes" ] ; then
   temp_remove_db="$(xshok_remove_database "DISABLED" "${urlhaus_dbs[@]}")"
 fi
 urlhaus_remove_dbs=( )
-if [ -n "$temp_remove_db" ] ; then
+if [ -n "$temp_remove_db" ] && [ "$remove_disabled_databases" == "yes" ] ; then
   read -r -a urlhaus_remove_dbs <<< "$temp_remove_db"
 fi
 ############################################################################################
 if [ "$malwarepatrol_enabled" == "yes" ] ; then
     # Set the variables for MalwarePatrol
-    if [ "$malwarepatrol_product_code" != "8" ] ; then
-        # assumption, free product code is always 8 (non-free product code is never 8)
+    if [ "$malwarepatrol_product_code" != "32" ] ; then
+        # assumption, free product code is always 32 (non-free product code is never 32)
         malwarepatrol_free="no"
     fi
     if [ "$malwarepatrol_free" == "yes" ] ; then
-      malwarepatrol_product_code="8"
+      malwarepatrol_product_code="32"
       malwarepatrol_list="clamav_basic"
     else
       if [ -z $malwarepatrol_list ] ; then
@@ -2434,107 +2596,124 @@ if [ "$malwarepatrol_enabled" == "yes" ] ; then
       fi
       if [ -z $malwarepatrol_product_code ] ; then
         # Not sure, it may be better to return an error.
-        malwarepatrol_product_code=8
+        malwarepatrol_product_code=32
       fi
     fi
     if [ -z "$malwarepatrol_db" ] ; then
         malwarepatrol_db="malwarepatrol.db"
     fi
+    if [ -z "$malwarepatrol_whitelist_googledrive" ] ; then
+        malwarepatrol_whitelist_googledrive="no"
+    fi
     malwarepatrol_url="${malwarepatrol_url}?receipt=${malwarepatrol_receipt_code}&product=${malwarepatrol_product_code}&list=${malwarepatrol_list}"
-else
+elif [ "$remove_disabled_databases" == "yes" ] ; then
     malwarepatrol_remove_dbs=( "malwarepatrol.db" )
 fi
 ############################################################################################
 # CLEANUP UNUSED DATABASES, eg when downgrading a database rating or disabling a database
-if [ -n "${sanesecurity_remove_dbs[0]}" ] ; then
-  for db_file in "${sanesecurity_remove_dbs[@]}" ; do
-    if [ -f "${work_dir_sanesecurity}/${db_file}" ] ; then
-        echo "Removing unused file: ${work_dir_sanesecurity}/${db_file}"
-        rm -f "${work_dir_sanesecurity}/${db_file}"
+if [ "$remove_disabled_databases" == "yes" ] ; then
+    if [ -n "${sanesecurity_remove_dbs[0]}" ] ; then
+      for db_file in "${sanesecurity_remove_dbs[@]}" ; do
+        if [ -f "${work_dir_sanesecurity}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${work_dir_sanesecurity}/${db_file}"
+            rm -f "${work_dir_sanesecurity}/${db_file}"
+        fi
+        if [ -f "${clam_dbs}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${clam_dbs}/${db_file}"
+            rm -f "${clam_dbs}/${db_file}"
+        fi
+      done
     fi
-    if [ -f "${clam_dbs}/${db_file}" ] ; then
-        echo "Removing unused file: ${clam_dbs}/${db_file}"
-        rm -f "${clam_dbs}/${db_file}"
+    if [ -n "${securiteinfo_remove_dbs[0]}" ] ; then
+      for db_file in "${securiteinfo_remove_dbs[@]}" ; do
+        if [ -f "${work_dir_securiteinfo}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${work_dir_securiteinfo}/${db_file}"
+            rm -f "${work_dir_securiteinfo}/${db_file}"
+        fi
+        if [ -f "${clam_dbs}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${clam_dbs}/${db_file}"
+            rm -f "${clam_dbs}/${db_file}"
+        fi
+      done
     fi
-  done
-fi
-if [ -n "${securiteinfo_remove_dbs[0]}" ] ; then
-  for db_file in "${securiteinfo_remove_dbs[@]}" ; do
-    if [ -f "${work_dir_securiteinfo}/${db_file}" ] ; then
-        echo "Removing unused file: ${work_dir_securiteinfo}/${db_file}"
-        rm -f "${work_dir_securiteinfo}/${db_file}"
+    if [ -n "${linuxmalwaredetect_remove_dbs[0]}" ] ; then
+      for db_file in "${linuxmalwaredetect_remove_dbs[@]}" ; do
+        if [ -f "${work_dir_linuxmalwaredetect}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${work_dir_linuxmalwaredetect}/${db_file}"
+            rm -f "${work_dir_linuxmalwaredetect}/${db_file}"
+        fi
+        if [ -f "${clam_dbs}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${clam_dbs}/${db_file}"
+            rm -f "${clam_dbs}/${db_file}"
+        fi
+      done
     fi
-    if [ -f "${clam_dbs}/${db_file}" ] ; then
-        echo "Removing unused file: ${clam_dbs}/${db_file}"
-        rm -f "${clam_dbs}/${db_file}"
+    if [ -n "${interserver_remove_dbs[0]}" ] ; then
+      for db_file in "${interserver_remove_dbs[@]}" ; do
+        if [ -f "${work_dir_interserver}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${work_dir_interserver}/${db_file}"
+            rm -f "${work_dir_interserver}/${db_file}"
+        fi
+        if [ -f "${clam_dbs}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${clam_dbs}/${db_file}"
+            rm -f "${clam_dbs}/${db_file}"
+        fi
+      done
     fi
-  done
-fi
-if [ -n "${linuxmalwaredetect_remove_dbs[0]}" ] ; then
-  for db_file in "${linuxmalwaredetect_remove_dbs[@]}" ; do
-    if [ -f "${work_dir_linuxmalwaredetect}/${db_file}" ] ; then
-        echo "Removing unused file: ${work_dir_linuxmalwaredetect}/${db_file}"
-        rm -f "${work_dir_linuxmalwaredetect}/${db_file}"
+    if [ -n "${malwareexpert_remove_dbs[0]}" ] ; then
+      for db_file in "${malwareexpert_remove_dbs[@]}" ; do
+        if [ -f "${work_dir_malwareexpert}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${work_dir_malwareexpert}/${db_file}"
+            rm -f "${work_dir_malwareexpert}/${db_file}"
+        fi
+        if [ -f "${clam_dbs}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${clam_dbs}/${db_file}"
+            rm -f "${clam_dbs}/${db_file}"
+        fi
+      done
     fi
-    if [ -f "${clam_dbs}/${db_file}" ] ; then
-        echo "Removing unused file: ${clam_dbs}/${db_file}"
-        rm -f "${clam_dbs}/${db_file}"
+    if [ -n "${yararulesproject_remove_dbs[0]}" ] ; then
+      for db_file in "${yararulesproject_remove_dbs[@]}" ; do
+          if echo "$db_file" | $grep_bin -q "/" ; then
+            yr_dir="/$(echo "$db_file" | cut -d "/" -f 1)"
+            db_file="$(echo "$db_file" | cut -d "/" -f 2)"
+          else
+              yr_dir=""
+          fi
+        if [ -f "${work_dir_yararulesproject}/${yr_dir}${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${work_dir_yararulesproject}/${db_file}"
+            rm -f "${work_dir_yararulesproject}/${db_file}"
+        fi
+        if [ -f "${clam_dbs}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${clam_dbs}/${db_file}"
+            rm -f "${clam_dbs}/${db_file}"
+        fi
+      done
     fi
-  done
-fi
-if [ -n "${malwareexpert_remove_dbs[0]}" ] ; then
-  for db_file in "${malwareexpert_remove_dbs[@]}" ; do
-    if [ -f "${work_dir_malwareexpert}/${db_file}" ] ; then
-        echo "Removing unused file: ${work_dir_malwareexpert}/${db_file}"
-        rm -f "${work_dir_malwareexpert}/${db_file}"
+    if [ -n "${urlhaus_remove_dbs[0]}" ] ; then
+      for db_file in "${urlhaus_remove_dbs[@]}" ; do
+        if [ -f "${work_dir_urlhaus}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${work_dir_urlhaus}/${db_file}"
+            rm -f "${work_dir_urlhaus}/${db_file}"
+        fi
+        if [ -f "${clam_dbs}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${clam_dbs}/${db_file}"
+            rm -f "${clam_dbs}/${db_file}"
+        fi
+      done
     fi
-    if [ -f "${clam_dbs}/${db_file}" ] ; then
-        echo "Removing unused file: ${clam_dbs}/${db_file}"
-        rm -f "${clam_dbs}/${db_file}"
+    if [ -n "${malwarepatrol_remove_dbs[0]}" ] ; then
+      for db_file in "${malwarepatrol_remove_dbs[@]}" ; do
+        if [ -f "${work_dir_malwarepatrol}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${work_dir_malwarepatrol}/${db_file}"
+            rm -f "${work_dir_malwarepatrol}/${db_file}"
+        fi
+        if [ -f "${clam_dbs}/${db_file}" ] ; then
+            xshok_pretty_echo_and_log "Removing unused file: ${clam_dbs}/${db_file}"
+            rm -f "${clam_dbs}/${db_file}"
+        fi
+      done
     fi
-  done
-fi
-if [ -n "${yararulesproject_remove_dbs[0]}" ] ; then
-  for db_file in "${yararulesproject_remove_dbs[@]}" ; do
-      if echo "$db_file" | $grep_bin -q "/" ; then
-        yr_dir="/$(echo "$db_file" | cut -d "/" -f 1)"
-        db_file="$(echo "$db_file" | cut -d "/" -f 2)"
-      else
-          yr_dir=""
-      fi
-    if [ -f "${work_dir_yararulesproject}/${yr_dir}${db_file}" ] ; then
-        echo "Removing unused file: ${work_dir_yararulesproject}/${db_file}"
-        rm -f "${work_dir_yararulesproject}/${db_file}"
-    fi
-    if [ -f "${clam_dbs}/${db_file}" ] ; then
-        echo "Removing unused file: ${clam_dbs}/${db_file}"
-        rm -f "${clam_dbs}/${db_file}"
-    fi
-  done
-fi
-if [ -n "${urlhaus_remove_dbs[0]}" ] ; then
-  for db_file in "${urlhaus_remove_dbs[@]}" ; do
-    if [ -f "${work_dir_urlhaus}/${db_file}" ] ; then
-        echo "Removing unused file: ${work_dir_urlhaus}/${db_file}"
-        rm -f "${work_dir_urlhaus}/${db_file}"
-    fi
-    if [ -f "${clam_dbs}/${db_file}" ] ; then
-        echo "Removing unused file: ${clam_dbs}/${db_file}"
-        rm -f "${clam_dbs}/${db_file}"
-    fi
-  done
-fi
-if [ -n "${malwarepatrol_remove_dbs[0]}" ] ; then
-  for db_file in "${malwarepatrol_remove_dbs[@]}" ; do
-    if [ -f "${work_dir_malwarepatrol}/${db_file}" ] ; then
-        echo "Removing unused file: ${work_dir_malwarepatrol}/${db_file}"
-        rm -f "${work_dir_malwarepatrol}/${db_file}"
-    fi
-    if [ -f "${clam_dbs}/${db_file}" ] ; then
-        echo "Removing unused file: ${clam_dbs}/${db_file}"
-        rm -f "${clam_dbs}/${db_file}"
-    fi
-  done
 fi
 
 ############################################################################################
@@ -2577,15 +2756,18 @@ fi
 
 # Check to see if the working directories have been created. If not, create them.  Otherwise, ignore and proceed with script.
 xshok_mkdir_ownership "$work_dir"
-xshok_mkdir_ownership "$work_dir_securiteinfo"
-xshok_mkdir_ownership "$work_dir_malwarepatrol"
+xshok_mkdir_ownership "$work_dir_gpg"
+xshok_mkdir_ownership "$work_dir_add"
+xshok_mkdir_ownership "$work_dir_pid"
+xshok_mkdir_ownership "$work_dir_interserver"
 xshok_mkdir_ownership "$work_dir_linuxmalwaredetect"
 xshok_mkdir_ownership "$work_dir_malwareexpert"
+xshok_mkdir_ownership "$work_dir_malwarepatrol"
 xshok_mkdir_ownership "$work_dir_sanesecurity"
-xshok_mkdir_ownership "$work_dir_yararulesproject"
+xshok_mkdir_ownership "$work_dir_securiteinfo"
 xshok_mkdir_ownership "$work_dir_work_configs"
-xshok_mkdir_ownership "${work_dir_gpg}"
-xshok_mkdir_ownership "$work_dir_add"
+xshok_mkdir_ownership "$work_dir_yararulesproject"
+xshok_mkdir_ownership "$work_dir_urlhaus"
 
 # Set secured access permissions to the GPG directory
 perms chmod -f 0700 "${work_dir_gpg}"
@@ -2694,6 +2876,14 @@ if [ "$linuxmalwaredetect_enabled" == "yes" ] ; then
   if [ -n "${linuxmalwaredetect_dbs[0]}" ] ; then
     for db in "${linuxmalwaredetect_dbs[@]}" ; do
       echo "${work_dir_linuxmalwaredetect}/${db}" >> "${current_tmp}"
+      clamav_files
+    done
+  fi
+fi
+if [ "$interserver_enabled" == "yes" ] ; then
+  if [ -n "${interserver_dbs[0]}" ] ; then
+    for db in "${interserver_dbs[@]}" ; do
+      echo "${work_dir_interserver}/${db}" >> "${current_tmp}"
       clamav_files
     done
   fi
@@ -2816,30 +3006,42 @@ if [ "$sanesecurity_enabled" == "yes" ] ; then
         echo "$current_time" > "${work_dir_work_configs}/last-ss-update.txt"
         xshok_pretty_echo_and_log "Sanesecurity Database & GPG Signature File Updates" "="
         xshok_pretty_echo_and_log "Checking for Sanesecurity updates..."
-                if [ -n "$dig_bin" ] ; then
-                    # shellcheck disable=SC2086
+        if [ -n "$dig_bin" ] ; then
+            # shellcheck disable=SC2086
             sanesecurity_mirror_ips="$($dig_bin $dig_proxy +ignore +short "$sanesecurity_url")"
-                else
-                    sanesecurity_mirror_ips=""
-                fi
-                # Add fallback to host if dig returns no records or dig is not used
+        else
+            # shellcheck disable=SC2086
+            sanesecurity_mirror_ips="$($host_bin $host_proxy -t A "$sanesecurity_url" | $sed_bin -n '/has address/{s/.*address \([^ ]*\).*/\1/;p;}')"
+        fi
+        # Add fallback if no records are returned
         if [ ${#sanesecurity_mirror_ips} -lt 1 ] ; then
-                    # shellcheck disable=SC2086
-          sanesecurity_mirror_ips="$($host_bin $host_proxy -t A "$sanesecurity_url" | $sed_bin -n '/has address/{s/.*address \([^ ]*\).*/\1/;p;}')"
+            if [ -n "$dig_bin" ] ; then
+                # shellcheck disable=SC2086
+                sanesecurity_mirror_ips="$($dig_bin $dig_proxy +ignore +short "$sanesecurity_url")"
+            else
+                # shellcheck disable=SC2086
+                sanesecurity_mirror_ips="$($host_bin $host_proxy -t A "$sanesecurity_url" | $sed_bin -n '/has address/{s/.*address \([^ ]*\).*/\1/;p;}')"
+            fi
         fi
 
         if [ ${#sanesecurity_mirror_ips} -ge 1 ] ; then
           for sanesecurity_mirror_ip in $sanesecurity_mirror_ips ; do
-                        if [ -n "$dig_bin" ] ; then
-                            # shellcheck disable=SC2086
+            if [ -n "$dig_bin" ] ; then
+                # shellcheck disable=SC2086
                 sanesecurity_mirror_name="$($dig_bin $dig_proxy +short -x "$sanesecurity_mirror_ip" | command "$sed_bin" 's/\.$//')"
-                        else
-                            sanesecurity_mirror_name=""
-                        fi
-            # Add fallback to host if dig returns no records or dig is not used
+            else
+                # shellcheck disable=SC2086
+                sanesecurity_mirror_name="$($host_bin $host_proxy -t A "$sanesecurity_mirror_ip" | $sed_bin -n '/name pointer/{s/.*pointer \([^ ]*\).*\.$/\1/;p;}')"
+            fi
+            # Add fallback if no records are returned
             if [ -z "$sanesecurity_mirror_name" ] ; then
-                            # shellcheck disable=SC2086
-              sanesecurity_mirror_name="$($host_bin $host_proxy "$sanesecurity_mirror_ip" | $sed_bin -n '/name pointer/{s/.*pointer \([^ ]*\).*\.$/\1/;p;}')"
+                if [ -n "$dig_bin" ] ; then
+                    # shellcheck disable=SC2086
+                    sanesecurity_mirror_name="$($dig_bin $dig_proxy +short -x "$sanesecurity_mirror_ip" | command "$sed_bin" 's/\.$//')"
+                else
+                    # shellcheck disable=SC2086
+                    sanesecurity_mirror_name="$($host_bin $host_proxy -t A "$sanesecurity_mirror_ip" | $sed_bin -n '/name pointer/{s/.*pointer \([^ ]*\).*\.$/\1/;p;}')"
+                fi
             fi
             sanesecurity_mirror_site_info="$sanesecurity_mirror_name $sanesecurity_mirror_ip"
             xshok_pretty_echo_and_log "Sanesecurity mirror site used: ${sanesecurity_mirror_site_info}"
@@ -2922,7 +3124,7 @@ if [ "$sanesecurity_enabled" == "yes" ] ; then
                 fi
               done
               if [ ! "$sanesecurity_update" == "1" ] ; then
-                xshok_pretty_echo_and_log "No Sanesecurity database file updates found" "-"
+                xshok_pretty_echo_and_log "No Sanesecurity database file updates" "-"
                 break
               else
                 break
@@ -3069,11 +3271,11 @@ if [ "$securiteinfo_enabled" == "yes" ] ; then
               xshok_pretty_echo_and_log "Failed connection to ${securiteinfo_url} - SKIPPED SecuriteInfo ${db_file} update"
             fi
             if [ "$securiteinfo_db_update" != "1" ] ; then
-              xshok_pretty_echo_and_log "No updated SecuriteInfo ${db_file} database file found" "-"
+              xshok_pretty_echo_and_log "No updated SecuriteInfo ${db_file} database file" "-"
             fi
           done
           if [ "$securiteinfo_updates" != "1" ] ; then
-            xshok_pretty_echo_and_log "No SecuriteInfo database file updates found" "-"
+            xshok_pretty_echo_and_log "No SecuriteInfo database file updates" "-"
           fi
         else
           xshok_pretty_echo_and_log "SecuriteInfo Database File Updates" "="
@@ -3157,11 +3359,22 @@ if [ "$linuxmalwaredetect_enabled" == "yes" ] ; then
         fi
 
         if [ "$found_upgrade" == "yes" ] ; then
-          xshok_file_download "${work_dir_linuxmalwaredetect}/sigpack.tgz" "${linuxmalwaredetect_sigpack_url}"
+          mkdir -p "${work_dir_linuxmalwaredetect}/tmp/"
+          xshok_file_download "${work_dir_linuxmalwaredetect}/tmp/sigpack.tgz" "${linuxmalwaredetect_sigpack_url}"
           ret="$?"
           if [ "$ret" -eq 0 ] ; then
-                        # shellcheck disable=SC2035
-            $tar_bin --strip-components=1 --wildcards --overwrite -xzf "${work_dir_linuxmalwaredetect}/sigpack.tgz" --directory "${work_dir_linuxmalwaredetect}" */rfxn.*
+            mkdir -p "${work_dir_linuxmalwaredetect}/tmp/"
+            $tar_bin --strip-components=1 -xzf "${work_dir_linuxmalwaredetect}/tmp/sigpack.tgz" --directory "${work_dir_linuxmalwaredetect}/tmp/"
+            #ls -l "${work_dir_linuxmalwaredetect}/tmp/"
+            if [ "$enable_yararules" == "yes" ] ; then
+                find "${work_dir_linuxmalwaredetect}/tmp/" -type f -iname "rfxn.*" -exec mv -f '{}' "${work_dir_linuxmalwaredetect}/" \;
+            else
+                find "${work_dir_linuxmalwaredetect}/tmp/" -type f -iname "rfxn.*" ! \( -iname "*.yara" -o -iname "*.yar" \) -exec mv -f '{}' "${work_dir_linuxmalwaredetect}/" \;
+            fi
+            # cleanup
+            rm -rf -- "${work_dir_linuxmalwaredetect:?}/tmp"
+            #ls -l "${work_dir_linuxmalwaredetect}/"
+
             for db_file in "${linuxmalwaredetect_dbs[@]}" ; do
               if [ "$loop" == "1" ] ; then
                 xshok_pretty_echo_and_log "---"
@@ -3231,7 +3444,7 @@ if [ "$linuxmalwaredetect_enabled" == "yes" ] ; then
             xshok_pretty_echo_and_log "WARNING: Failed connection to ${linuxmalwaredetect_sigpack_url} - SKIPPED LinuxMalwareDetect update"
           fi
         else
-          xshok_pretty_echo_and_log "No LinuxMalwareDetect database file updates found" "-"
+          xshok_pretty_echo_and_log "No LinuxMalwareDetect database file updates" "-"
         fi
       else
         xshok_pretty_echo_and_log "LinuxMalwareDetect Database File Updates" "="
@@ -3247,10 +3460,6 @@ else
       if [ -f "${work_dir_linuxmalwaredetect}/current_linuxmalwaredetect_version" ] ; then
         rm -f "${work_dir_linuxmalwaredetect}/current_linuxmalwaredetect_version"
       fi
-      if [ -f "${work_dir_linuxmalwaredetect}/sigpack.tgz" ] ; then
-        rm -f "${work_dir_linuxmalwaredetect}/sigpack.tgz"
-      fi
-
       for db_file in "${linuxmalwaredetect_dbs[@]}" ; do
         if echo "$db_file" | $grep_bin -q "|" ; then
           db_file="${db_file%|*}"
@@ -3258,6 +3467,145 @@ else
         if [ -r "${work_dir_linuxmalwaredetect}/${db_file}" ] ; then
           xshok_pretty_echo_and_log "Removing ${work_dir_linuxmalwaredetect}/${db_file}"
           rm -f "${work_dir_linuxmalwaredetect}/${db_file}"
+          do_clamd_reload=1
+        fi
+        if [ -r "${clam_dbs}/${db_file}" ] ; then
+          xshok_pretty_echo_and_log "Removing ${clam_dbs}/${db_file}"
+          rm -f "${clam_dbs}/${db_file}"
+          do_clamd_reload=1
+        fi
+      done
+    fi
+  fi
+fi
+##############################################################################################################################################
+# Check for updated interServer database files every set number of hours as defined in the "USER CONFIGURATION" section of this script      #
+##############################################################################################################################################
+if [ "$interserver_enabled" == "yes" ] ; then
+     if [ -n "${interserver_dbs[0]}" ] ; then
+      if [ ${#interserver_dbs} -lt 1 ] ; then
+        xshok_pretty_echo_and_log "Failed interserver_dbs config is invalid or not defined - SKIPPING"
+      else
+        rm -f "${work_dir_interserver}/*.gz"
+        if [ -r "${work_dir_work_configs}/last-is-update.txt" ] ; then
+          last_interserver_update="$(cat "${work_dir_work_configs}/last-is-update.txt")"
+        else
+          last_interserver_update="0"
+        fi
+        db_file=""
+        loop=""
+        if [ "$interserver_premium" == "yes" ] ; then
+            update_interval="$((interserver_premium_update_hours * 3600))"
+        else
+            update_interval="$((interserver_update_hours * 3600))"
+        fi
+        time_interval="$((current_time - last_interserver_update))"
+        if [ "$time_interval" -ge "$((update_interval - 600))" ] ; then
+          echo "$current_time" > "${work_dir_work_configs}/last-is-update.txt"
+          xshok_pretty_echo_and_log "interserver Database File Updates" "="
+          xshok_pretty_echo_and_log "Checking for interserver updates..."
+          interserver_updates="0"
+          for db_file in "${interserver_dbs[@]}" ; do
+            if [ "$loop" == "1" ] ; then
+              xshok_pretty_echo_and_log "---"
+            fi
+            xshok_pretty_echo_and_log "Checking for updated interServer database file: ${db_file}"
+            interserver_db_update="0"
+            xshok_file_download "${work_dir_interserver}/${db_file}" "${interserver_url}/${db_file}"
+            ret="$?"
+            if [ "$ret" -eq 0 ] ; then
+              loop="1"
+              if ! cmp -s "${work_dir_interserver}/${db_file}" "${clam_dbs}/${db_file}" ; then
+                db_ext="${db_file#*.}"
+
+                xshok_pretty_echo_and_log "Testing updated interServer database file: ${db_file}"
+                if [ -z "$ham_dir" ] || [ "$db_ext" != "ndb" ] ; then
+                  if $clamscan_bin --quiet -d "${work_dir_interserver}/${db_file}" "${work_dir_work_configs}/scan-test.txt" 2>&10 ; then
+                    xshok_pretty_echo_and_log "Clamscan reports interServer ${db_file} database integrity tested good"
+                    true
+                  else
+                    xshok_pretty_echo_and_log "Clamscan reports interServer ${db_file} database integrity tested BAD"
+                    if [ "$remove_bad_database" == "yes" ] ; then
+                      if rm -f "${work_dir_interserver}/${db_file}" ; then
+                        xshok_pretty_echo_and_log "Removed invalid database: ${work_dir_interserver}/${db_file}"
+                      fi
+                    fi
+                    false
+                    fi && (test "$keep_db_backup" = "yes" && cp -f -p  "${clam_dbs}/${db_file}" "${clam_dbs}/${db}_file-bak" 2>/dev/null ; true) && if $rsync_bin -pcqt "${work_dir_interserver}/${db_file}" "$clam_dbs" 2>&13 ; then
+                    perms chown -f "${clam_user}:${clam_group}" "${clam_dbs}/${db_file}"
+                    if [ "$selinux_fixes" == "yes" ] ; then
+                      restorecon "${clam_dbs}/${db_file}"
+                    fi
+                    xshok_pretty_echo_and_log "Successfully updated interServer production database file: ${db_file}"
+                    interserver_updates=1
+                    interserver_db_update=1
+                    do_clamd_reload=1
+                  else
+                    xshok_pretty_echo_and_log "Failed to successfully update interServer production database file: ${db_file} - SKIPPING"
+                  fi
+                else
+                  $grep_bin -h -v -f "${work_dir_work_configs}/whitelist.hex" "${work_dir_interserver}/${db_file}" > "${test_dir}/${db_file}"
+                  $clamscan_bin --infected --no-summary -d "${test_dir}/${db_file}" "$ham_dir"/* | command "$sed_bin" 's/\.UNOFFICIAL FOUND//' | awk '{print $NF}' > "${work_dir_work_configs}/whitelist.txt"
+                  $grep_bin -h -f "${work_dir_work_configs}/whitelist.txt" "${test_dir}/${db_file}" | cut -d "*" -f 2 | sort | uniq >> "${work_dir_work_configs}/whitelist.hex"
+                  $grep_bin -h -v -f "${work_dir_work_configs}/whitelist.hex" "${test_dir}/${db_file}" > "${test_dir}/${db_file}-tmp"
+                  mv -f "${test_dir}/${db_file}-tmp" "${test_dir}/${db_file}"
+                  if $clamscan_bin --quiet -d "${test_dir}/${db_file}" "${work_dir_work_configs}/scan-test.txt" 2>&10 ; then
+                    xshok_pretty_echo_and_log "Clamscan reports interServer ${db_file} database integrity tested good"
+                    true
+                  else
+                    xshok_pretty_echo_and_log "Clamscan reports interServer ${db_file} database integrity tested BAD"
+                    rm -f "${work_dir_interserver}/${db_file}"
+                    if [ "$remove_bad_database" == "yes" ] ; then
+                      if rm -f "${work_dir_interserver}/${db_file}" ; then
+                        xshok_pretty_echo_and_log "Removed invalid database: ${work_dir_interserver}/${db_file}"
+                      fi
+                    fi
+                    false
+                    fi && (test "$keep_db_backup" = "yes" && cp -f -p  "${clam_dbs}/${db_file}" "${clam_dbs}/${db}_file-bak" 2>/dev/null ; true) && if $rsync_bin -pcqt "${test_dir}/${db_file}" "$clam_dbs" 2>&13 ; then
+                    perms chown -f "${clam_user}:${clam_group}" "${clam_dbs}/${db_file}"
+                    if [ "$selinux_fixes" == "yes" ] ; then
+                      restorecon "${clam_dbs}/${db_file}"
+                    fi
+                    xshok_pretty_echo_and_log "Successfully updated interServer production database file: ${db_file}"
+                    interserver_updates=1
+                    interserver_db_update=1
+                    do_clamd_reload=1
+                  else
+                    xshok_pretty_echo_and_log "Failed to successfully update interServer production database file: ${db_file} - SKIPPING"
+                  fi
+                fi
+              fi
+            else
+              xshok_pretty_echo_and_log "Failed connection to ${interserver_url} - SKIPPED interServer ${db_file} update"
+            fi
+            if [ "$interserver_db_update" != "1" ] ; then
+              xshok_pretty_echo_and_log "No updated interServer ${db_file} database file" "-"
+            fi
+          done
+          if [ "$interserver_updates" != "1" ] ; then
+            xshok_pretty_echo_and_log "No interServer database file updates" "-"
+          fi
+        else
+          xshok_pretty_echo_and_log "interServer Database File Updates" "="
+          if [ "$interserver_premium" == "yes" ] ; then
+              xshok_draw_time_remaining "$((update_interval - time_interval))" "$interserver_premium_update_hours" "interserver"
+          else
+              xshok_draw_time_remaining "$((update_interval - time_interval))" "$interserver_update_hours" "interserver"
+          fi
+        fi
+      fi
+    fi
+else
+  if [ -n "$interserver_dbs" ] ; then
+    if [ "$remove_disabled_databases" == "yes" ] ; then
+      xshok_pretty_echo_and_log "Removing disabled interServer Database files"
+      for db_file in "${interserver_dbs[@]}" ; do
+        if echo "$db_file" | $grep_bin -q "|" ; then
+          db_file="${db_file%|*}"
+        fi
+        if [ -r "${work_dir_interserver}/${db_file}" ] ; then
+          xshok_pretty_echo_and_log "Removing ${work_dir_interserver}/${db_file}"
+          rm -f "${work_dir_interserver}/${db_file}"
           do_clamd_reload=1
         fi
         if [ -r "${clam_dbs}/${db_file}" ] ; then
@@ -3372,11 +3720,11 @@ if [ "$malwareexpert_enabled" == "yes" ] ; then
               xshok_pretty_echo_and_log "Failed connection to ${malwareexpert_url} - SKIPPED Malware Expert ${db_file} update"
             fi
             if [ "$malwareexpert_db_update" != "1" ] ; then
-              xshok_pretty_echo_and_log "No updated Malware Expert ${db_file} database file found" "-"
+              xshok_pretty_echo_and_log "No updated Malware Expert ${db_file} database file" "-"
             fi
           done
           if [ "$malwareexpert_updates" != "1" ] ; then
-            xshok_pretty_echo_and_log "No Malware Expert database file updates found" "-"
+            xshok_pretty_echo_and_log "No Malware Expert database file updates" "-"
           fi
         else
           xshok_pretty_echo_and_log "Malware Expert Database File Updates" "="
@@ -3449,6 +3797,11 @@ if [ "$malwarepatrol_enabled" == "yes" ] ; then
 
             xshok_file_download "${work_dir_malwarepatrol}/${malwarepatrol_db}" "${malwarepatrol_url}"
 
+            #Check if Google Drive entries need to be removed
+            if [ "$malwarepatrol_whitelist_googledrive" == "yes" ] ; then
+                sed -i '/\=68747470733a2f2f64726976652e676f6f676c652e636f6d$/d' "${work_dir_malwarepatrol}/${malwarepatrol_db}"
+            fi
+            
             ret="$?"
             if [ "$ret" -eq 0 ] ; then
               loop="1"
@@ -3516,10 +3869,10 @@ if [ "$malwarepatrol_enabled" == "yes" ] ; then
               xshok_pretty_echo_and_log "Failed connection to ${malwarepatrol_url} - SKIPPED MalwarePatrol ${malwarepatrol_db} update"
             fi
             if [ "$malwarepatrol_db_update" != "1" ] ; then
-              xshok_pretty_echo_and_log "No updated MalwarePatrol ${malwarepatrol_db} database file found" "-"
+              xshok_pretty_echo_and_log "No updated MalwarePatrol ${malwarepatrol_db} database file" "-"
             fi
           if [ "$malwarepatrol_updates" != "1" ] ; then
-            xshok_pretty_echo_and_log "No MalwarePatrol database file updates found" "-"
+            xshok_pretty_echo_and_log "No MalwarePatrol database file updates" "-"
           fi
         else
           xshok_pretty_echo_and_log "MalwarePatrol Database File Updates" "="
@@ -3645,11 +3998,11 @@ if [ "$urlhaus_enabled" == "yes" ] ; then
             xshok_pretty_echo_and_log "WARNING: Failed connection to $urlhaus_url - SKIPPED urlhaus ${db_file} update"
           fi
           if [ "$urlhaus_db_update" != "1" ] ; then
-            xshok_pretty_echo_and_log "No updated urlhaus ${db_file} database file found"
+            xshok_pretty_echo_and_log "No updated urlhaus ${db_file} database file"
           fi
         done
         if [ "$urlhaus_updates" != "1" ] ; then
-          xshok_pretty_echo_and_log "No urlhaus database file updates found" "-"
+          xshok_pretty_echo_and_log "No urlhaus database file updates" "-"
         fi
       else
 
@@ -3782,11 +4135,11 @@ if [ "$yararulesproject_enabled" == "yes" ] ; then
             xshok_pretty_echo_and_log "WARNING: Failed connection to $yararulesproject_url - SKIPPED yararulesproject ${db_file} update"
           fi
           if [ "$yararulesproject_db_update" != "1" ] ; then
-            xshok_pretty_echo_and_log "No updated yararulesproject ${db_file} database file found"
+            xshok_pretty_echo_and_log "No updated yararulesproject ${db_file} database file"
           fi
         done
         if [ "$yararulesproject_updates" != "1" ] ; then
-          xshok_pretty_echo_and_log "No yararulesproject database file updates found" "-"
+          xshok_pretty_echo_and_log "No yararulesproject database file updates" "-"
         fi
       else
 
@@ -3945,11 +4298,11 @@ if [ "$additional_enabled" == "yes" ] ; then
             xshok_pretty_echo_and_log "WARNING: Failed connection to ${db_url} - SKIPPED additional ${db_file} update"
           fi
           if [ "$additional_db_update" != "1" ] ; then
-            xshok_pretty_echo_and_log "No updated additional ${db_file} database file found"
+            xshok_pretty_echo_and_log "No updated additional ${db_file} database file"
           fi
         done
         if [ "$additional_updates" != "1" ] ; then
-          xshok_pretty_echo_and_log "No additional database file updates found" "-"
+          xshok_pretty_echo_and_log "No additional database file updates" "-"
         fi
       else
         xshok_pretty_echo_and_log "Additional Database File Updates" "="
@@ -4044,17 +4397,21 @@ if [ -r "${clam_dbs}/my-whitelist.ign2" ] && [ -s "${work_dir_work_configs}/trac
   cp -f -p my-whitelist.ign2 "${work_dir_work_configs}/my-whitelist.ign2"
 
   xshok_pretty_echo_and_log "" "=" "80"
-
+  touch "${work_dir_work_configs}/tracker-tmp.txt"
   while read -r entry ; do
-    sig_file="$(echo "$entry" | cut -d ":" -f 1)"
-    sig_full="$(echo "$entry" | cut -d ":" -f 2-)"
-    sig_name="$(echo "$entry" | cut -d ":" -f 2)"
-    if ! $grep_bin -F "$sig_full" "$sig_file" > /dev/null 2>&1 ; then
-      perl -i -ne "print unless /$sig_name$/" "${work_dir_work_configs}/my-whitelist.ign2"
-      perl -i -ne "print unless /:$sig_name:/" "${work_dir_work_configs}/tracker-tmp.txt"
 
-      xshok_pretty_echo_and_log "${sig_name} signature no longer exists in ${sig_file}, whitelist entry removed from my-whitelist.ign2"
-      ign2_updated="1"
+      yaratest="$(echo "$entry" | cut -d "." -f 1)"
+      shopt -s nocasematch
+      if [ "$yaratest" != "YARA" ] ; then
+        sig_file="$(echo "$entry" | cut -d ":" -f 1)"
+        sig_full="$(echo "$entry" | cut -d ":" -f 2-)"
+        sig_name="$(echo "$entry" | cut -d ":" -f 2)"
+        if ! $grep_bin -F "$sig_full" "$sig_file" > /dev/null 2>&1 ; then
+          perl -i -ne "print unless /$sig_name$/" "${work_dir_work_configs}/my-whitelist.ign2"
+          perl -i -ne "print unless /:$sig_name:/" "${work_dir_work_configs}/tracker-tmp.txt"
+          xshok_pretty_echo_and_log "${sig_name} signature no longer exists in ${sig_file}, whitelist entry removed from my-whitelist.ign2"
+          ign2_updated="1"
+        fi
     fi
   done < "${work_dir_work_configs}/tracker.txt"
   if [ -f "${work_dir_work_configs}/tracker-tmp.txt" ] ; then

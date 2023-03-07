@@ -1,4 +1,4 @@
-# clamav-unofficial-sigs [![GitHub Release](https://img.shields.io/github/release/extremeshok/clamav-unofficial-sigs.svg?label=Latest)](https://github.com/extremeshok/clamav-unofficial-sigs/releases/latest) [![Build Status](https://travis-ci.org/extremeshok/clamav-unofficial-sigs.svg?branch=master)](https://travis-ci.org/extremeshok/clamav-unofficial-sigs) [![Issue Count](https://codeclimate.com/github/extremeshok/clamav-unofficial-sigs/badges/issue_count.svg)](https://codeclimate.com/github/extremeshok/clamav-unofficial-sigs)
+# clamav-unofficial-sigs [![GitHub Release](https://img.shields.io/github/release/extremeshok/clamav-unofficial-sigs.svg?label=Latest)](https://github.com/extremeshok/clamav-unofficial-sigs/releases/latest) [![Issue Count](https://codeclimate.com/github/extremeshok/clamav-unofficial-sigs/badges/issue_count.svg)](https://codeclimate.com/github/extremeshok/clamav-unofficial-sigs)
 
 ClamAV Unofficial Signatures Updater
 
@@ -6,7 +6,7 @@ ClamAV Unofficial Signatures Updater
 
 ## Description
 
-The clamav-unofficial-sigs script provides a simple way to download, test, and update third-party signature databases provided by Sanesecurity, FOXHOLE, OITC, Scamnailer, BOFHLAND, CRDF, Porcupine, Securiteinfo, MalwarePatrol, Yara-Rules Project, urlhaus, MalwareExpert etc. The script will also generate and install cron, logrotate, and man files.
+The clamav-unofficial-sigs script provides a simple way to download, test, and update third-party signature databases provided by Sanesecurity, FOXHOLE, OITC, BOFHLAND, CRDF, Porcupine, Securiteinfo, MalwarePatrol, Yara-Rules Project, urlhaus, MalwareExpert, interServer etc. The script will also generate and install cron, logrotate, and man files.
 
 ### Automated Testing and Linting
 
@@ -40,7 +40,7 @@ Debian, Ubuntu, Raspbian, CentOS (RHEL and clones), OpenBSD, FreeBSD, OpenSUSE, 
 * CentOS: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/centos7.md>
 * Ubuntu: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/ubuntu-debian.md>
 * Debian: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/ubuntu-debian.md>
-* Mac OSX: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/macosx.md>
+* macOS: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/macos.md>
 * pFsense: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/pfsense.md>
 
 ### UPGRADE INSTRUCTIONS (version 7.0 +)
@@ -96,6 +96,10 @@ Usage of free Yara-Rules Project: <http://yararules.com>
 
 Current limitations of clamav support: <http://blog.clamav.net/search/label/yara>
 
+### interServer free database support (as of December 2020)
+
+Usage of interServer: <http://rbluri.interserver.net>
+
 ### malware.expert non-free database support (as of December 2020)
 
 Usage of Malware Expert: <https://www.malware.expert>
@@ -104,7 +108,7 @@ Usage of Malware Expert: <https://www.malware.expert>
 1. You will receive an email containing your serial key
 1. Enter the serial key into the config malwareexpert_serial_key: replacing YOUR-SERIAL-KEY with your serial key from the email
 
-### MalwarePatrol Free/Delayed list support (as of May 2015)
+### MalwarePatrol free/delayed list support (as of May 2015)
 
 Usage of MalwarePatrol 2015 free clamav signatures: <https://www.malwarepatrol.net>
 
@@ -216,12 +220,57 @@ Usage: clamav-unofficial-sigs.sh   [OPTION] [PATH|FILE]
 
 ## Change Log
 
-### Version 7.2 ( XX December 2020: Under Development)
+### Version 7.2.5 (20 March 2021)
+* eXtremeSHOK.com Maintenance
+* Added : os.centos7-cpanel.conf
+* Refactor : bsd support for tar, remove gnu-tar requirement
+* Refactor : remove gnu-sed requirement
+* Refactor : bsd support for stat command
+
+### Version 7.2.4 (17 March 2021)
+
+* eXtremeSHOK.com Maintenance
+* Disabled winnow_malware.yara , duplicated in EMAIL_Cryptowall.yar and no longer maintained
+* Removed gtar requirement (--wildcards is the default)
+* Incremented the config to version 97
+
+### Version 7.2.3 (17 March 2021)
+
+* eXtremeSHOK.com Maintenance
+* Whitelist support for yararules (whitelist signature tracking is disabled for yararules)
+* Disable JJencode.yar , due to excessive CPU usage
+* Disable scamnailer , discontinued
+* Fix working directory variable "urlhausy" to "urlhaus"
+* Update pfsense guide for 2.5
+* Fix missing tracker-tmp.txt
+* Thank you @perplexityjeff
+
+### Version 7.2.2 (20 December 2020)
+
+* eXtremeSHOK.com Maintenance
+* Use POSIX character classes instead of literals
+* Prevent linuxmalwaredetect yara files being extracted when yara is not supported
+* Replace echo with xshok_pretty_echo_and_log to silence database cleanup cron messages
+
+### Version 7.2.1 (13 December 2020)
+
+* eXtremeSHOK.com Maintenance
+* Change yararule email/Email_generic_phishing.yar to HIGH
+* New config option: force_host, by default dig is used when dig and host is present.
+* Refactor and correct the assigning of binaries/commands
+* Fix broken yara rule database names: Maldoc_hancitor_dropper and Maldoc_APT19_CVE-2017-1099
+* Ensure only dig or host is used when either dig or host is enabled
+* Enable remove_disabled_databases by default
+* Fix disabled databases removed when "$remove_disabled_databases" is set to "no"
+* Incremented the config to version 95
+
+### Version 7.2 (07 December 2020)
 
 * Database rating downgrades are now supported, eg, changing from HIGH to LOW will remove the HIGH and MEDIUM rated databases.
 * Disabled databases are automatically removed
 * Disable databases by  setting the rating to "DISABLED" eg. securiteinfo_dbs_rating="DISABLED" will disable all securiteinfo databases
 * Added Malware Expert databases (non-free)
+* Added interServer databases (free)
 * Reworked securiteinfo premium databases (non-free)
 * Added malwarepatrol_db to specify the exact database name (default: malwarepatrol.db)
 * Added detection of tar executable (use gtar on mac and bsd)
@@ -229,9 +278,10 @@ Usage: clamav-unofficial-sigs.sh   [OPTION] [PATH|FILE]
 * Fix: set ownership of last-version-check.txt
 * More automated linting and testing (markdown and macOS / osx) via travis-ci
 * Updated macOS installation guide for Big Sur (OSX 11)
-* Incremented the config to version 93
+* Incremented the config to version 94
+* Thank you @dandanio @jkellerer @msapiro @shawniverson
 
-### Version 7.1 ( Not Released)
+### Version 7.1 (Not Released)
 
 * Enforce HTTPS validation by default
 * Updated sanesecurity publickey.gpg url to use SSL
@@ -244,14 +294,14 @@ Usage: clamav-unofficial-sigs.sh   [OPTION] [PATH|FILE]
 * Disable cron MAILTO
 * BSD read config fix
 * Incremented the config to version 92
-* Thank you @dandanio @Mrothyr @m0urs @msapiro @orlitzky @SlothOfAnarchy @jkellerer @RobbieTheK
+* Thank you @dandanio @jkellerer @m0urs @Mrothyr @msapiro @orlitzky @RobbieTheK @SlothOfAnarchy
 
-### Version 7.0.1 (25 January 2020)
+### Version 7.0.1
 
 * Disable yara project rules duplicated in rxfn.yara (Thanks @dominicraf)
 * Incremented the config to version 91
 
-### Version 7.0.0 (24 January 2020)
+### Version 7.0.0
 
 * eXtremeSHOK.com Maintenance
 * Added urlhaus database
@@ -284,7 +334,7 @@ Usage: clamav-unofficial-sigs.sh   [OPTION] [PATH|FILE]
 * Only check for and notify about script updates every 12hours
 * Incremented the config to version 90
 
-### Version 6.1.1 (02 September 2019)
+### Version 6.1.1
 
 * eXtremeSHOK.com Maintenance
 * Update os.archlinux.conf, thanks @amishmm
@@ -299,7 +349,7 @@ Usage: clamav-unofficial-sigs.sh   [OPTION] [PATH|FILE]
 * Minor enhancement to travis-ci checks
 * Incremented the config to version 77
 
-### Version 6.1.0 (27 August 2019)
+### Version 6.1.0
 
 * eXtremeSHOK.com Maintenance
 * Thanks Reio Remma & Oliver Nissen
