@@ -1,4 +1,4 @@
-# clamav-unofficial-sigs [![GitHub Release](https://img.shields.io/github/release/extremeshok/clamav-unofficial-sigs.svg?label=Latest)](https://github.com/extremeshok/clamav-unofficial-sigs/releases/latest) [![Issue Count](https://codeclimate.com/github/extremeshok/clamav-unofficial-sigs/badges/issue_count.svg)](https://codeclimate.com/github/extremeshok/clamav-unofficial-sigs)
+# clamav-unofficial-sigs [![GitHub Release](https://img.shields.io/github/release/micneon/clamav-unofficial-sigs.svg?label=Latest)](https://github.com/micneon/clamav-unofficial-sigs/releases/latest) [![Issue Count](https://codeclimate.com/github/micneon/clamav-unofficial-sigs/badges/issue_count.svg)](https://codeclimate.com/github/micneon/clamav-unofficial-sigs)
 
 ClamAV Unofficial Signatures Updater
 
@@ -12,11 +12,9 @@ The clamav-unofficial-sigs script provides a simple way to download, test, and u
 * Linting with markdownlint-cli and shellcheck
 * Testing with Ubuntu Focal and macOS / OSX
 
-### Checkout some of our other solutions: <https://github.com/extremeshok?tab=repositories>
-
 ### Support / Suggestions / Comments
 
-Please post them on the issue tracker: <https://github.com/extremeshok/clamav-unofficial-sigs/issues>
+Please post them on the issue tracker: <https://github.com/micneon/clamav-unofficial-sigs/issues>
 
 ### Submit Patches / Pull requests to the "dev" Branch
 
@@ -31,15 +29,15 @@ Debian, Ubuntu, Raspbian, CentOS (RHEL and clones), OpenBSD, FreeBSD, OpenSUSE, 
 
 ### Quick Install and Upgrade Guide
 
-<https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/INSTALL.md>
+<https://github.com/micneon/clamav-unofficial-sigs/tree/master/INSTALL.md>
 
 ### Operating System Specific Install and Upgrade Guides
 
-* CentOS: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/centos7.md>
-* Ubuntu: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/ubuntu-debian.md>
-* Debian: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/ubuntu-debian.md>
-* macOS: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/macos.md>
-* pFsense: <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/guides/pfsense.md>
+* CentOS: <https://github.com/micneon/clamav-unofficial-sigs/tree/master/guides/centos7.md>
+* Ubuntu: <https://github.com/micneon/clamav-unofficial-sigs/tree/master/guides/ubuntu-debian.md>
+* Debian: <https://github.com/micneon/clamav-unofficial-sigs/tree/master/guides/ubuntu-debian.md>
+* macOS: <https://github.com/micneon/clamav-unofficial-sigs/tree/master/guides/macos.md>
+* pFsense: <https://github.com/micneon/clamav-unofficial-sigs/tree/master/guides/pfsense.md>
 
 ### UPGRADE INSTRUCTIONS (version 7.0 +)
 
@@ -50,7 +48,7 @@ clamav-unofficial-sigs.sh
 
 ### FOR PACKAGE MAINTAINERS / PACKAGERS
 
-Please use the included os.*.conf sample config file as a base for your os.conf, this will disable automatic updates, update notifications and the uninstallation feature. <https://github.com/extremeshok/clamav-unofficial-sigs/tree/master/config/packaging>
+Please use the included os.*.conf sample config file as a base for your os.conf, this will disable automatic updates, update notifications and the uninstallation feature. <https://github.com/micneon/clamav-unofficial-sigs/tree/master/config/packaging>
 
 ### Always Run the script once as your superuser to set all the permissions and create the relevant directories
 
@@ -136,7 +134,7 @@ Usage of free Linux Malware Detect clamav signatures: <https://www.rfxn.com/proj
 
 ### If you want to add, report a missing one or have a problem with a database
 
-Please post on the issue tracker: <https://github.com/extremeshok/clamav-unofficial-sigs/issues>
+Please post on the issue tracker: <https://github.com/micneon/clamav-unofficial-sigs/issues>
 
 ## USAGE
 
@@ -853,4 +851,4 @@ Usage: clamav-unofficial-sigs.sh   [OPTION] [PATH|FILE]
 
 ## Script updates can be found at
 
-### <https://github.com/extremeshok/clamav-unofficial-sigs>
+### <https://github.com/micneon/clamav-unofficial-sigs>
