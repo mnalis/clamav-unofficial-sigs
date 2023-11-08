@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2119
 # shellcheck disable=SC2120
 # shellcheck disable=SC2128
@@ -1548,8 +1549,8 @@ EOF
 ################################################################################
 
 # Script Info
-script_version="7.2.6"
-script_version_date="2023-10-24"
+script_version="7.2.7"
+script_version_date="2023-11-08"
 minimum_required_config_version="96"
 minimum_yara_clamav_version="0.100"
 
