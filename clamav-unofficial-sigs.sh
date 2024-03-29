@@ -1250,7 +1250,7 @@ function add_signature_whitelist_entry() { #signature
             else
                 position="2"
             fi
-            sig_name="$(echo "$sig_full" | cut -d ":" -f $position | cut -d "=" -f 1)"
+            sig_name="$(echo "$sig_full" | cut -d ":" -f $position | cut -d ";" -f 1 | cut -d "=" -f 1)"
         fi
 
     if [ -n "$sig_name" ] ; then
