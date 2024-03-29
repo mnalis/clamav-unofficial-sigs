@@ -9,10 +9,11 @@
 # License: BSD (Berkeley Software Distribution)
 ################################################################################
 #
-# Script updates can be found at: https://github.com/micneon/clamav-unofficial-sigs
+# Script updates can be found at: https://github.com/mnalis/clamav-unofficial-sigs
 #
 # Originially based on Script provided by Bill Landry (unofficialsigs@gmail.com).
 # Patches and other fixes by Michael Angenendt (ich@micneon.de)
+# Merging multiple forks by Matija Nalis
 #
 ################################################################################
 #
@@ -536,7 +537,7 @@ clamav-unofficial-sigs \\- Download, test, and install third-party ClamAV signat
 .SH DESCRIPTION
 \\fBclamav-unofficial-sigs\\fP provides a simple way to download, test, and update third-party signature databases provided by Sanesecurity, FOXHOLE, OITC, BOFHLAND, CRDF, Porcupine, Securiteinfo, MalwarePatrol, Yara-Rules Project, etc. It will also generate and install cron, logrotate, and man files.
 .SH UPDATES
-Script updates can be found at: \\fBhttps://github.com/micneon/clamav-unofficial-sigs\\fP
+Script updates can be found at: \\fBhttps://github.com/mnalis/clamav-unofficial-sigs\\fP
 .SH OPTIONS
 This script follows the standard GNU command line syntax.
 .LP
@@ -551,7 +552,7 @@ You are free to use, modify and distribute, however you may not remove this noti
 .SH LICENSE
 BSD (Berkeley Software Distribution)
 .SH BUGS
-Report bugs to \\fBhttps://github.com/micneon/clamav-unofficial-sigs\\fP
+Report bugs to \\fBhttps://github.com/mnalis/clamav-unofficial-sigs\\fP
 .SH AUTHOR
 Adrian Jon Kriel
 Originially based on Script provide by Bill Landry
@@ -604,7 +605,7 @@ function install_logrotate() {
 # Copyright (c) Adrian Jon Kriel
 ##################
 #
-# Script updates can be found at: https://github.com/micneon/clamav-unofficial-sigs
+# Script updates can be found at: https://github.com/mnalis/clamav-unofficial-sigs
 #
 # Originially based on:
 # Script provide by Bill Landry (unofficialsigs@gmail.com).
@@ -678,7 +679,7 @@ function install_cron() {
 # Copyright (c) Adrian Jon Kriel
 ##################
 #
-# Script updates can be found at: https://github.com/micneon/clamav-unofficial-sigs
+# Script updates can be found at: https://github.com/mnalis/clamav-unofficial-sigs
 #
 # Originially based on:
 # Script provide by Bill Landry (unofficialsigs@gmail.com).
@@ -726,14 +727,14 @@ function xshok_upgrade() {
     found_upgrade="no"
     if [ -n "$curl_bin" ] ; then
         # shellcheck disable=SC2086
-        latest_version="$($curl_bin --compressed $curl_proxy $curl_insecure $curl_output_level --connect-timeout "${downloader_connect_timeout}" --remote-time --location --retry "${downloader_tries}" --max-time "${downloader_max_time}" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" 2>&11 | $grep_bin "^script_version=" | head -n1 | cut -d '"' -f 2)"
+        latest_version="$($curl_bin --compressed $curl_proxy $curl_insecure $curl_output_level --connect-timeout "${downloader_connect_timeout}" --remote-time --location --retry "${downloader_tries}" --max-time "${downloader_max_time}" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" 2>&11 | $grep_bin "^script_version=" | head -n1 | cut -d '"' -f 2)"
         # shellcheck disable=SC2086
-        latest_config_version="$($curl_bin --compressed $curl_proxy $curl_insecure $curl_output_level --connect-timeout "${downloader_connect_timeout}" --remote-time --location --retry "${downloader_tries}" --max-time "${downloader_max_time}" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/config/master.conf" 2>&11 | $grep_bin "^config_version=" | head -n1 | cut -d '"' -f 2)"
+        latest_config_version="$($curl_bin --compressed $curl_proxy $curl_insecure $curl_output_level --connect-timeout "${downloader_connect_timeout}" --remote-time --location --retry "${downloader_tries}" --max-time "${downloader_max_time}" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/config/master.conf" 2>&11 | $grep_bin "^config_version=" | head -n1 | cut -d '"' -f 2)"
     else
         # shellcheck disable=SC2086
-        latest_version="$($wget_bin $wget_compression $wget_proxy $wget_insecure $wget_output_level --connect-timeout="${downloader_connect_timeout}" --random-wait --tries="${downloader_tries}" --timeout="${downloader_max_time}" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" -O - 2>&12 | $grep_bin "^script_version=" | head -n1 | cut -d '"' -f 2)"
+        latest_version="$($wget_bin $wget_compression $wget_proxy $wget_insecure $wget_output_level --connect-timeout="${downloader_connect_timeout}" --random-wait --tries="${downloader_tries}" --timeout="${downloader_max_time}" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" -O - 2>&12 | $grep_bin "^script_version=" | head -n1 | cut -d '"' -f 2)"
         # shellcheck disable=SC2086
-        latest_config_version="$($wget_bin $wget_compression $wget_proxy $wget_insecure $wget_output_level --connect-timeout="${downloader_connect_timeout}" --random-wait --tries="${downloader_tries}" --timeout="${downloader_max_time}" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/config/master.conf" -O - 2>&12 | $grep_bin "^config_version=" | head -n1 | cut -d '"' -f 2)"
+        latest_config_version="$($wget_bin $wget_compression $wget_proxy $wget_insecure $wget_output_level --connect-timeout="${downloader_connect_timeout}" --random-wait --tries="${downloader_tries}" --timeout="${downloader_max_time}" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/config/master.conf" -O - 2>&12 | $grep_bin "^config_version=" | head -n1 | cut -d '"' -f 2)"
     fi
 
   # config_dir/master.conf
@@ -743,11 +744,11 @@ function xshok_upgrade() {
             found_upgrade="yes"
             xshok_pretty_echo_and_log "ALERT: Upgrading config from v${config_version} to v${latest_config_version}"
             if [ -w "${config_dir}/master.conf" ] && [ -f "${config_dir}/master.conf" ] ; then
-                echo "Downloading https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/config/master.conf"
-                xshok_file_download "${work_dir}/master.conf.tmp" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/config/master.conf" "notimestamp"
+                echo "Downloading https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/config/master.conf"
+                xshok_file_download "${work_dir}/master.conf.tmp" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/config/master.conf" "notimestamp"
                 ret="$?"
                 if [ "$ret" -ne 0 ] ; then
-                    xshok_pretty_echo_and_log "ERROR: Could not download https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/config/master.conf"
+                    xshok_pretty_echo_and_log "ERROR: Could not download https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/config/master.conf"
                     exit 1
                 fi
                 if ! $grep_bin -m 1 "config_version" "${work_dir}/master.conf.tmp" > /dev/null 2>&1 ; then
@@ -783,11 +784,11 @@ function xshok_upgrade() {
             found_upgrade="yes"
         xshok_pretty_echo_and_log "ALERT:  Upgrading script from v${script_version} to v${latest_version}"
             if [ -w "${config_dir}/master.conf" ] && [ -f "${config_dir}/master.conf" ] ; then
-                echo "Downloading https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh"
-                xshok_file_download "${work_dir}/clamav-unofficial-sigs.sh.tmp" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" "notimestamp"
+                echo "Downloading https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh"
+                xshok_file_download "${work_dir}/clamav-unofficial-sigs.sh.tmp" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" "notimestamp"
               ret=$?
                 if [ "$ret" -ne 0 ] ; then
-                    xshok_pretty_echo_and_log "ERROR: Could not download https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh"
+                    xshok_pretty_echo_and_log "ERROR: Could not download https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh"
                     exit 1
                 fi
                 # Detect to make sure the entire script is avilable, fail if the script is missing contents
@@ -1431,26 +1432,26 @@ function check_new_version() {
     found_upgrade="no"
   if [ -n "$curl_bin" ] ; then
         # shellcheck disable=SC2086
-        latest_version="$($curl_bin --compressed $curl_proxy $curl_insecure $curl_output_level --connect-timeout "${downloader_connect_timeout}" --remote-time --location --retry "${downloader_tries}" --max-time "${downloader_max_time}" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" 2>&11 | $grep_bin "^script_version=" | head -n1 | cut -d '"' -f 2)"
+        latest_version="$($curl_bin --compressed $curl_proxy $curl_insecure $curl_output_level --connect-timeout "${downloader_connect_timeout}" --remote-time --location --retry "${downloader_tries}" --max-time "${downloader_max_time}" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" 2>&11 | $grep_bin "^script_version=" | head -n1 | cut -d '"' -f 2)"
         # shellcheck disable=SC2086
-        latest_config_version="$($curl_bin --compressed $curl_proxy $curl_insecure $curl_output_level --connect-timeout "${downloader_connect_timeout}" --remote-time --location --retry "${downloader_tries}" --max-time "${downloader_max_time}" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/config/master.conf" 2>&11 | $grep_bin "^config_version=" | head -n1 | cut -d '"' -f 2)"
+        latest_config_version="$($curl_bin --compressed $curl_proxy $curl_insecure $curl_output_level --connect-timeout "${downloader_connect_timeout}" --remote-time --location --retry "${downloader_tries}" --max-time "${downloader_max_time}" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/config/master.conf" 2>&11 | $grep_bin "^config_version=" | head -n1 | cut -d '"' -f 2)"
     else
         # shellcheck disable=SC2086
-        latest_version="$($wget_bin $wget_compression $wget_proxy $wget_insecure $wget_output_level --connect-timeout="${downloader_connect_timeout}" --random-wait --tries="${downloader_tries}" --timeout="${downloader_max_time}" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" -O - 2>&12 | $grep_bin "^script_version=" | head -n1 | cut -d '"' -f 2)"
+        latest_version="$($wget_bin $wget_compression $wget_proxy $wget_insecure $wget_output_level --connect-timeout="${downloader_connect_timeout}" --random-wait --tries="${downloader_tries}" --timeout="${downloader_max_time}" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/clamav-unofficial-sigs.sh" -O - 2>&12 | $grep_bin "^script_version=" | head -n1 | cut -d '"' -f 2)"
         # shellcheck disable=SC2086
-        latest_config_version="$($wget_bin $wget_compression $wget_proxy $wget_insecure $wget_output_level --connect-timeout="${downloader_connect_timeout}" --random-wait --tries="${downloader_tries}" --timeout="${downloader_max_time}" "https://raw.githubusercontent.com/micneon/clamav-unofficial-sigs/${git_branch}/config/master.conf" -O - 2>&12 | $grep_bin "^config_version=" | head -n1 | cut -d '"' -f 2)"
+        latest_config_version="$($wget_bin $wget_compression $wget_proxy $wget_insecure $wget_output_level --connect-timeout="${downloader_connect_timeout}" --random-wait --tries="${downloader_tries}" --timeout="${downloader_max_time}" "https://raw.githubusercontent.com/mnalis/clamav-unofficial-sigs/${git_branch}/config/master.conf" -O - 2>&12 | $grep_bin "^config_version=" | head -n1 | cut -d '"' -f 2)"
     fi
   if [ "$latest_version" ] ; then
         # shellcheck disable=SC2183,SC2086
         if [ "$(printf "%02d%02d%02d%02d" ${latest_version//./ })" -gt "$(printf "%02d%02d%02d%02d" ${script_version//./ })" ] ; then
-      xshok_pretty_echo_and_log "ALERT: New version : v${latest_version} @ https://github.com/micneon/clamav-unofficial-sigs"
+      xshok_pretty_echo_and_log "ALERT: New version : v${latest_version} @ https://github.com/mnalis/clamav-unofficial-sigs"
             found_upgrade="yes"
     fi
   fi
   if [ "$latest_config_version" ] ; then
         # shellcheck disable=SC2183,SC2086
         if [ "$(printf "%02d%02d%02d%02d" ${latest_config_version//./ })" -gt "$(printf "%02d%02d%02d%02d" ${config_version//./ })" ] ; then
-      xshok_pretty_echo_and_log "ALERT: New config version : v${latest_config_version} @ https://github.com/micneon/clamav-unofficial-sigs"
+      xshok_pretty_echo_and_log "ALERT: New config version : v${latest_config_version} @ https://github.com/mnalis/clamav-unofficial-sigs"
             found_upgrade="yes"
     fi
   fi
@@ -4476,7 +4477,7 @@ fi
 # Reload all clamd databases
 clamscan_reload_dbs
 
-xshok_pretty_echo_and_log "Issue tracker : https://github.com/micneon/clamav-unofficial-sigs/issues" "-"
+xshok_pretty_echo_and_log "Issue tracker : https://github.com/mnalis/clamav-unofficial-sigs/issues" "-"
 
 if [ "$allow_update_checks" != "no" ] ; then
 
