@@ -16,7 +16,7 @@ Script updates can be found at: <https://github.com/mnalis/clamav-unofficial-sig
 * CentOS : <https://github.com/mnalis/clamav-unofficial-sigs/blob/master/guides/centos7.md>
 * Ubuntu : <https://github.com/mnalis/clamav-unofficial-sigs/blob/master/guides/ubuntu-debian.md>
 * Debian : <https://github.com/mnalis/clamav-unofficial-sigs/blob/master/guides/ubuntu-debian.md>
-* Mac OSX : <https://github.com/mnalis/clamav-unofficial-sigs/blob/master/guides/macosx.md> 
+* Mac OSX : <https://github.com/mnalis/clamav-unofficial-sigs/blob/master/guides/macosx.md>
 * pFsense : <https://github.com/mnalis/clamav-unofficial-sigs/blob/master/guides/pfsense.md>
 
 ## GENERIC UPGRADE INSTRUCTIONS (version 7.0 +)
